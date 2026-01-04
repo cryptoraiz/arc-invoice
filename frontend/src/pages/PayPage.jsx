@@ -10,8 +10,9 @@ import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseUnits } from 'viem'
 import { ERC20_ABI } from '../utils/abis'
 
-// Endereço do USDC na Arc Testnet (ou Mock)
+// Endereços Oficiais Arc Testnet
 const USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
+const EURC_ADDRESS = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
 
 export default function PayPage() {
     const { linkId } = useParams()
@@ -117,14 +118,17 @@ export default function PayPage() {
         if (!paymentData) return
         setIsPaying(true)
 
+        // Select correct token address based on currency
+        const tokenAddress = paymentData.currency === 'EURC' ? EURC_ADDRESS : USDC_ADDRESS;
+
         try {
             writeContract({
-                address: USDC_ADDRESS,
+                address: tokenAddress,
                 abi: ERC20_ABI,
                 functionName: 'transfer',
                 args: [
                     paymentData.recipientWallet,
-                    parseUnits(paymentData.amount.toString(), 6) // USDC tem 6 decimais
+                    parseUnits(paymentData.amount.toString(), 6) // Ambos têm 6 decimais
                 ],
             })
         } catch (err) {
