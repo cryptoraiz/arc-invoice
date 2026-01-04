@@ -439,6 +439,35 @@ export default function PayPage() {
                                     </div>
                                 </div>
 
+                                {/* Network Warning Banner */}
+                                {isConnected && chainId && chainId !== arcTestnet.id && (
+                                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 space-y-3">
+                                        <div className="flex items-start gap-3">
+                                            <div className="text-2xl">⚠️</div>
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-bold text-red-400 mb-1">
+                                                    Rede Incorreta Detectada
+                                                </h4>
+                                                <p className="text-xs text-gray-300 mb-3">
+                                                    Você está conectado em outra rede. Para pagar, você precisa estar na <span className="font-semibold text-white">Arc Testnet</span>.
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        toast.info('Trocando para Arc Testnet...')
+                                                        switchChain({ chainId: arcTestnet.id }).catch(err => {
+                                                            console.error('Erro ao trocar rede:', err)
+                                                            toast.error('Erro ao trocar de rede')
+                                                        })
+                                                    }}
+                                                    className="w-full px-4 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors"
+                                                >
+                                                    Trocar para Arc Testnet
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Botão de Ação */}
                                 {!isConnected ? (
                                     <div className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/10">
@@ -449,6 +478,13 @@ export default function PayPage() {
                                             Clique no botão "Conectar Wallet" no cabeçalho
                                         </p>
                                     </div>
+                                ) : (chainId && chainId !== arcTestnet.id) ? (
+                                    <button
+                                        disabled
+                                        className="w-full px-6 py-3 rounded-xl font-bold text-base bg-gray-700 text-gray-400 cursor-not-allowed"
+                                    >
+                                        Troque para Arc Testnet Primeiro
+                                    </button>
                                 ) : (
                                     <button
                                         onClick={handlePayment}
