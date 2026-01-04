@@ -9,13 +9,13 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
     const walletIcons = {
         'MetaMask': 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
         'Rabby Wallet': 'https://raw.githubusercontent.com/RabbyHub/Rabby/develop/src/ui/assets/dashboard/rabby.svg',
-        'Phantom': 'https://avatars.githubusercontent.com/u/78782331?s=200&v=4',
-        'Coinbase Wallet': 'https://avatars.githubusercontent.com/u/1885080?s=200&v=4',
+        'Phantom': 'https://phantom.app/img/phantom-logo.svg',
+        'Coinbase Wallet': 'https://www.coinbase.com/img/favicon/favicon-32x32.png',
         'WalletConnect': 'https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg',
-        'Rainbow': 'https://avatars.githubusercontent.com/u/48327834?s=200&v=4',
+        'Rainbow': 'https://raw.githubusercontent.com/rainbow-me/rainbowkit/main/assets/rainbow.svg',
         'Backpack': 'https://raw.githubusercontent.com/coral-xyz/backpack/master/assets/backpack.png',
-        'Keplr': 'https://avatars.githubusercontent.com/u/74381830?s=200&v=4',
-        'Safe': 'https://avatars.githubusercontent.com/u/102983781?s=200&v=4',
+        'Keplr': 'https://www.keplr.app/icons/icon-96x96.png',
+        'Safe': 'https://app.safe.global/favicons/logo_120x120.png',
         'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback for Injected
     }
 
