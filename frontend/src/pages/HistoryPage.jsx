@@ -182,7 +182,7 @@ export default function HistoryPage() {
     };
 
     const generatePaymentReceipt = (item) => {
-        // Placeholder for receipt generation logic
+
         // console.log("Generating receipt for:", item);
         import('../utils/generateReceipt').then(module => {
             module.generatePaymentReceipt(item);

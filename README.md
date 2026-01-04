@@ -1,4 +1,4 @@
-# 🔗 ArcPay - Payment Links para USDC & EURC
+# 🔗 Arc Invoice - Payment Links para USDC & EURC
 
 > Links de pagamento profissionais na Arc Network. Crie, compartilhe, receba.
 
@@ -19,7 +19,7 @@ Receber pagamentos em cripto é complicado:
 
 ## 💡 Solução
 
-ArcPay cria **payment links profissionais** que:
+Arc Invoice cria **payment links profissionais** que:
 - ✅ Cliente clica e vê página bonita
 - ✅ Valor, descrição e QR Code visíveis
 - ✅ Conecta wallet e paga em 2 clicks
@@ -38,10 +38,9 @@ ArcPay cria **payment links profissionais** que:
 - Framer Motion (animações)
 - React QR Code
 
-### **Backend (futuro):**
+### **Backend:**
 - Node.js + Express
-- PostgreSQL + Prisma
-- JWT Auth
+- MongoDB (Serverless) (Implementado)
 
 ### **Blockchain:**
 - Arc Network Testnet
@@ -54,13 +53,12 @@ ArcPay cria **payment links profissionais** que:
 
 ### **1. Clone o repositório:**
 ```bash
-git clone https://github.com/seu-user/arcpay.git
-cd arcpay/arcpay-react
+git clone https://github.com/seu-user/arc-invoice.git
+cd arc-invoice/frontend
 ```
 
-### **2. Instale dependências do frontend:**
+### **2. Instale dependências:**
 ```bash
-cd frontend
 npm install
 ```
 
@@ -68,53 +66,37 @@ npm install
 ```bash
 cp .env.example .env
 ```
-
-Edite `.env` e adicione:
-```env
-VITE_CONTRACT_ADDRESS=0x...  # Endereço do seu contrato deployado
-VITE_ARC_RPC_URL=https://rpc.arc.network
-```
+Edite `.env` com suas chaves.
 
 ### **4. Rode o projeto:**
 ```bash
 npm run dev
 ```
 
-Acesse: `http://localhost:3000`
+Acesse: `http://localhost:5173`
 
 ---
 
 ## 📁 Estrutura do Projeto
 
 ```
-arcpay-react/
+arc-invoice/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── layout/         # Navbar, Footer, Layout
+│   │   │   ├── layout/         # Navbar, Footer
 │   │   │   ├── forms/          # PaymentForm
-│   │   │   └── ui/             # CurrencySelect, Button
-│   │   ├── pages/              # HomePage, FAQ, ComoFunciona
-│   │   ├── config/             # wagmi.js (Arc Network)
-│   │   ├── hooks/              # Custom hooks
-│   │   ├── utils/              # Helpers
+│   │   │   └── ui/             # FaucetModal, Button
+│   │   ├── pages/              # PayPage, HistoryPage
+│   │   ├── config/             # wagmi.js
+│   │   ├── hooks/              # useInvoiceNotifications
+│   │   ├── utils/              # localStorage.js
 │   │   └── styles/             # globals.css
 │   ├── index.html
-│   ├── vite.config.js
-│   ├── tailwind.config.js
 │   └── package.json
-└── backend/ (futuro)
-```
-
----
-
-## 🔧 Scripts Disponíveis
-
-```bash
-npm run dev      # Roda em modo desenvolvimento
-npm run build    # Build para produção
-npm run preview  # Preview da build
-npm run lint     # Lint com ESLint
+└── backend/
+    ├── server.js               # API Server
+    └── package.json
 ```
 
 ---
@@ -127,64 +109,15 @@ cd frontend
 vercel deploy
 ```
 
-### **Backend (futuro):**
-```bash
-cd backend
-npm run build
-npm start
-```
-
 ---
 
-## 🎨 Componentes Principais
-
-### **CurrencySelect (dropdown customizado):**
-```jsx
-import CurrencySelect from '@/components/ui/CurrencySelect'
-
-<CurrencySelect 
-  value={currency} 
-  onChange={(newCurrency) => setCurrency(newCurrency)} 
-/>
-```
-
-### **PaymentForm:**
-```jsx
-import PaymentForm from '@/components/forms/PaymentForm'
-
-<PaymentForm />
-```
-
----
-
-## 🔗 Links Úteis
-
-- [Arc Network](https://arc.network)
-- [Circle (USDC/EURC)](https://circle.com)
-- [Wagmi Docs](https://wagmi.sh)
-- [Headless UI](https://headlessui.com)
-
----
-
-## 📝 TODO
-
-### **🔴 CRÍTICO (fazer primeiro):**
-- [ ] Deploy smart contract na Arc Testnet
-- [ ] Integrar Wagmi para wallet connection
-- [ ] Implementar funcionalidade de gerar links
-- [ ] Criar backend Node.js + PostgreSQL
-
-### **🟡 IMPORTANTE:**
-- [ ] Migrar conteúdo de `como-funciona.html` para React
-- [ ] Migrar conteúdo de `faq.html` para React
-- [ ] Implementar QR Code funcional
-- [ ] Validação de formulários
-
-### **🟢 MELHORIAS:**
-- [ ] Histórico de pagamentos
-- [ ] Notificações (email/webhook)
-- [ ] Multi-idioma (PT/EN/ES)
-- [ ] Dashboard de analytics
+## 📝 Status
+- [x] Deploy smart contract na Arc Testnet
+- [x] Integrar Wagmi para wallet connection
+- [x] Implementar funcionalidade de gerar links
+- [x] Criar backend Node.js + MongoDB
+- [x] Histórico de pagamentos
+- [x] Notificações em tempo real
 
 ---
 
@@ -200,13 +133,7 @@ import PaymentForm from '@/components/forms/PaymentForm'
 
 ## 📄 Licença
 
-MIT © 2025 ArcPay
-
----
-
-## 👨‍💻 Autor
-
-**Dan** - [GitHub](https://github.com/seu-user)
+MIT © 2025 Arc Invoice
 
 ---
 
@@ -214,4 +141,3 @@ MIT © 2025 ArcPay
 
 - **Arc Network** - Blockchain para pagamentos
 - **Circle** - USDC/EURC stablecoins
-- **Anthropic** - Assistência no desenvolvimento

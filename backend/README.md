@@ -1,4 +1,4 @@
-# ArcPay Backend
+# Arc Invoice Backend
 
 Backend serverless para notificações de invoices usando Vercel Functions + MongoDB.
 
@@ -19,7 +19,7 @@ npm install
 4. Crie um arquivo `.env.local`:
 
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/arcpay?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/arc-invoice?retryWrites=true&w=majority
 ```
 
 ### 3. Rodar localmente

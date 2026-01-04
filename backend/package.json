@@ -1,5 +1,5 @@
 {
-    "name": "arcpay-backend",
+    "name": "arc-invoice-backend",
     "version": "1.0.0",
     "description": "ArcPay serverless backend for invoice notifications",
     "main": "index.js",

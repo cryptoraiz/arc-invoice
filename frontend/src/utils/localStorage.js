@@ -2,7 +2,7 @@
  * LocalStorage utility for managing Arc Invoice payment links
  */
 
-const STORAGE_KEY = 'arcpay_payment_links';
+const STORAGE_KEY = 'arc_invoice_payment_links';
 
 /**
  * Get all payment links from localStorage
@@ -104,7 +104,7 @@ export const clearAllPaymentLinks = () => {
 
 // ===== SENT PAYMENTS MANAGEMENT =====
 
-const SENT_PAYMENTS_KEY = 'arcpay_sent_payments';
+const SENT_PAYMENTS_KEY = 'arc_invoice_sent_payments';
 
 /**
  * Get all sent payments from localStorage
