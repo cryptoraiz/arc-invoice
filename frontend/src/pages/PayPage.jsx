@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAccount } from 'wagmi'
+import { useAccount, useSwitchChain, useChainId } from 'wagmi'
 import { getPaymentLinkById, updatePaymentLink, saveSentPayment } from '../utils/localStorage'
 import { generatePaymentReceipt } from '../utils/generateReceipt'
 import { invoiceAPI } from '../services/invoiceService'
@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseUnits } from 'viem'
 import { ERC20_ABI } from '../utils/abis'
+import { arcTestnet } from '../config/wagmi'
 
 // Endereços Oficiais Arc Testnet
 const USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
@@ -26,6 +27,8 @@ export default function PayPage() {
     const [isExpired, setIsExpired] = useState(false)
 
     // Wagmi Hooks
+    const chainId = useChainId()
+    const { switchChain } = useSwitchChain()
     const { data: hash, writeContract, error: writeError } = useWriteContract()
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
@@ -114,8 +117,20 @@ export default function PayPage() {
         }
     }, [isConfirmed, hash, writeError])
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         if (!paymentData) return
+
+        // Check if on correct network
+        if (chainId !== arcTestnet.id) {
+            try {
+                toast.info('Trocando para Arc Testnet...')
+                await switchChain({ chainId: arcTestnet.id })
+            } catch (err) {
+                toast.error('Você precisa estar na Arc Testnet para pagar')
+                return
+            }
+        }
+
         setIsPaying(true)
 
         // Select correct token address based on currency
