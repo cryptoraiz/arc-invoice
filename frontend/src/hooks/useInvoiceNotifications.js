@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { invoiceAPI } from '../services/invoiceService';
+import { arcTestnet } from '../config/wagmi';
 
 /**
  * Hook to manage invoice notifications for the connected wallet
  */
 export const useInvoiceNotifications = () => {
     const { address, isConnected } = useAccount();
+    const chainId = useChainId();
     const [pendingInvoices, setPendingInvoices] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -14,7 +16,8 @@ export const useInvoiceNotifications = () => {
 
     // Fetch pending invoices
     const fetchInvoices = useCallback(async () => {
-        if (!isConnected || !address) {
+        // Block request if not connected or WRONG NETWORK
+        if (!isConnected || !address || chainId !== arcTestnet.id) {
             setPendingInvoices([]);
             return;
         }
@@ -47,7 +50,7 @@ export const useInvoiceNotifications = () => {
         const interval = setInterval(fetchInvoices, 30000); // 30s
 
         return () => clearInterval(interval);
-    }, [address, isConnected, fetchInvoices]);
+    }, [address, isConnected, chainId, fetchInvoices]);
 
     // Refresh manually
     const refresh = useCallback(() => {

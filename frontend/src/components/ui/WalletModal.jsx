@@ -1,33 +1,43 @@
 import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 
+// Import wallet icons locally
+import metamaskIcon from '../../assets/wallet-icons/metamask.svg'
+import rabbyIcon from '../../assets/wallet-icons/rabby.png'
+import phantomIcon from '../../assets/wallet-icons/phantom.png'
+import coinbaseIcon from '../../assets/wallet-icons/coinbase.png'
+import rainbowIcon from '../../assets/wallet-icons/rainbow.png'
+import backpackIcon from '../../assets/wallet-icons/backpack.png'
+import walletconnectIcon from '../../assets/wallet-icons/walletconnect.svg'
+import keplrIcon from '../../assets/wallet-icons/keplr.png'
+import safeIcon from '../../assets/wallet-icons/safe.png'
+import bitgetIcon from '../../assets/wallet-icons/bitget.png'
+import okxIcon from '../../assets/wallet-icons/okx.png'
+
 export default function WalletModal({ isOpen, onClose, connectors, onSelectWallet }) {
     // Detect installed wallets by checking if connector is ready
     const installedWallets = connectors.filter(c => c.ready !== false && c.id !== 'walletConnect')
 
-    // Official Wallet Icons - Mixed Strategy for Best Results
+    // Official Wallet Icons - Local Assets (Never breaks!)
     const walletIcons = {
-        // High Quality SVGs (Best looking)
-        'MetaMask': 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
-        'WalletConnect': 'https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg',
-
-        // Reliable GitHub Avatars (For wallets where direct SVGs breaks)
-        'Rabby Wallet': 'https://rabby.io/assets/images/logo-128.png',
-        'Rabby': 'https://rabby.io/assets/images/logo-128.png',
-        'Phantom': 'https://avatars.githubusercontent.com/u/78782331?s=200&v=4', // Phantom
-        'Coinbase Wallet': 'https://avatars.githubusercontent.com/u/1885080?s=200&v=4', // Coinbase
-        'Rainbow': 'https://avatars.githubusercontent.com/u/48327834?s=200&v=4', // Rainbow
-        'Backpack': 'https://uploads-ssl.webflow.com/63fac39558371c24c7e0fdc3/64c935dd295d1442bc4fbc87_backpack-icon.png',
-        'Keplr': 'https://avatars.githubusercontent.com/u/74381830?s=200&v=4', // Chainapsis
-        'Safe': 'https://avatars.githubusercontent.com/u/102983781?s=200&v=4', // Safe Global
-        'Trust Wallet': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Trust Wallet
+        'MetaMask': metamaskIcon,
+        'WalletConnect': walletconnectIcon,
+        'Rabby Wallet': rabbyIcon,
+        'Rabby': rabbyIcon,
+        'Phantom': phantomIcon,
+        'Coinbase Wallet': coinbaseIcon,
+        'Rainbow': rainbowIcon,
+        'Backpack': backpackIcon,
+        'Keplr': keplrIcon,
+        'Safe': safeIcon,
+        'Trust Wallet': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Fallback URL
         'Trust': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4',
-        'Brave Wallet': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Brave
+        'Brave Wallet': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Fallback URL
         'Brave': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4',
-        'OKX Wallet': 'https://static.okx.com/cdn/wallet/logo/okx-wallet-logo.png',
-        'Bitget Wallet': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4', // Bitget
-        'BitKeep': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4',
-        'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback
+        'OKX Wallet': okxIcon,
+        'Bitget Wallet': bitgetIcon,
+        'BitKeep': bitgetIcon,
+        'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback URL
     }
 
     const popularWallets = [

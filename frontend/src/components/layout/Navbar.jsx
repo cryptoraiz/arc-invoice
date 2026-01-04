@@ -72,32 +72,55 @@ export default function Navbar() {
     const maxRetries = 2
 
     const attemptSwitch = async () => {
-      if (!mounted || !isConnected || !chainId || chainId === arcTestnet.id) return
+      if (!mounted || !isConnected || !chainId || chainId === arcTestnet.id) {
+        console.log('🔍 Auto-Switch abortado:', {
+          mounted,
+          isConnected,
+          chainId,
+          arcTestnetId: arcTestnet.id,
+          needsSwitch: chainId !== arcTestnet.id
+        })
+        return
+      }
+
+      console.log(`🔄 Auto-Switch iniciado - Tentativa ${retryCount + 1}/${maxRetries + 1}`, {
+        currentChain: chainId,
+        targetChain: arcTestnet.id,
+        connector: connector?.name
+      })
 
       try {
-        console.log(`Tentativa de Auto-Switch ${retryCount + 1}/${maxRetries}...`)
         await switchChain({ chainId: arcTestnet.id })
+        console.log('✅ Auto-Switch bem-sucedido!')
         toast.success('Rede alterada com sucesso!')
       } catch (err) {
-        console.warn(`Erro no Auto-Switch (Tentativa ${retryCount + 1}):`, err)
+        console.warn(`⚠️ Erro no Auto-Switch (Tentativa ${retryCount + 1}):`, err)
 
         // Ignora rejeição do usuário
-        if (err.code === 4001 || err.message?.includes('rejected')) return
+        if (err.code === 4001 || err.message?.includes('rejected')) {
+          console.log('❌ Usuário rejeitou a troca de rede')
+          return
+        }
 
         // Fallback para Raw Switch na última tentativa ou se erro for crítico
         if (retryCount >= maxRetries) {
-          console.log("Tentando Fallback Raw...")
-          await attemptRawSwitch()
+          console.log("🔧 Tentando Fallback Raw Switch...")
+          const success = await attemptRawSwitch()
+          if (!success) {
+            toast.error('Não foi possível trocar para Arc Testnet. Troque manualmente.', { duration: 5000 })
+          }
         } else {
           retryCount++
+          console.log(`⏳ Aguardando 1.5s para próxima tentativa...`)
           setTimeout(attemptSwitch, 1500)
         }
       }
     }
 
     if (isConnected && chainId && chainId !== arcTestnet.id) {
+      console.log('🚀 Agendando Auto-Switch em 500ms...')
       // Initial delay
-      const timer = setTimeout(attemptSwitch, 1500)
+      const timer = setTimeout(attemptSwitch, 500)
       return () => {
         mounted = false
         clearTimeout(timer)
