@@ -34,13 +34,31 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
         { name: 'Coinbase Wallet', icon: walletIcons['Coinbase Wallet'], description: 'Wallet oficial da Coinbase' },
     ]
 
-    const getWalletIcon = (name) => {
-        if (!name) return walletIcons['Injected']
+    const getWalletIcon = (connector) => {
+        if (!connector) return walletIcons['Injected']
 
-        // Direct match
+        // Check by Name (Direct)
+        const name = connector.name
         if (walletIcons[name]) return walletIcons[name]
 
-        // Fuzzy match for common wallets
+        // Check by ID (More reliable for some)
+        const id = connector.id?.toLowerCase()
+        if (id) {
+            if (id.includes('rabby')) return walletIcons['Rabby Wallet']
+            if (id.includes('phantom')) return walletIcons['Phantom']
+            if (id.includes('backpack')) return walletIcons['Backpack']
+            if (id.includes('rainbow')) return walletIcons['Rainbow']
+            if (id.includes('metamask')) return walletIcons['MetaMask']
+            if (id.includes('coinbase')) return walletIcons['Coinbase Wallet']
+            if (id.includes('okx')) return walletIcons['OKX Wallet']
+            if (id.includes('trust')) return walletIcons['Trust Wallet']
+            if (id.includes('bitget') || id.includes('bitkeep')) return walletIcons['Bitget Wallet']
+            if (id.includes('keplr')) return walletIcons['Keplr']
+            if (id.includes('safe')) return walletIcons['Safe']
+            if (id.includes('walletconnect')) return walletIcons['WalletConnect']
+        }
+
+        // Check by Name (Fuzzy)
         const lowerName = name.toLowerCase()
         if (lowerName.includes('rabby')) return walletIcons['Rabby Wallet']
         if (lowerName.includes('phantom')) return walletIcons['Phantom']
@@ -122,7 +140,7 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                                             className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.07] hover:border-blue-500/30 transition-all group"
                                                         >
                                                             <div className="w-8 h-8 flex items-center justify-center">
-                                                                <img src={getWalletIcon(connector.name)} alt={connector.name} className="w-full h-full object-contain p-0.5" />
+                                                                <img src={getWalletIcon(connector)} alt={connector.name} className="w-full h-full object-contain p-0.5" />
                                                             </div>
                                                             <div className="flex-1 text-left">
                                                                 <div className="font-semibold text-sm text-white group-hover:text-blue-400 transition-colors">
