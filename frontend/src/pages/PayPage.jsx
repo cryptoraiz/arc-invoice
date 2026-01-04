@@ -469,16 +469,16 @@ export default function PayPage() {
                                             }}
                                             className="w-full px-6 py-3 rounded-xl font-bold text-base bg-red-500 hover:bg-red-600 text-white transition-all shadow-lg shadow-red-500/20 flex items-center justify-center gap-4 group overflow-hidden relative"
                                         >
-                                            {/* Left Arrow - Animated */}
-                                            <svg className="w-5 h-5 animate-bounce-left" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" transform="scale(-1, 1) translate(-24, 0)" />
+                                            {/* Left Arrow - Points Right (Inwards) */}
+                                            <svg className="w-5 h-5 animate-bounce-right" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                             </svg>
 
                                             <span className="relative z-10 uppercase tracking-wide">Trocar para Arc Testnet</span>
 
-                                            {/* Right Arrow - Animated */}
-                                            <svg className="w-5 h-5 animate-bounce-right" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                            {/* Right Arrow - Points Left (Inwards) */}
+                                            <svg className="w-5 h-5 animate-bounce-left" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" transform="scale(-1, 1) translate(-24, 0)" />
                                             </svg>
                                         </button>
                                     </div>
