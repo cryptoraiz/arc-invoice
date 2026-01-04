@@ -5,25 +5,25 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
     // Detect installed wallets by checking if connector is ready
     const installedWallets = connectors.filter(c => c.ready !== false && c.id !== 'walletConnect')
 
-    // Official Wallet Icons - All high-quality, transparent backgrounds
+    // Official Wallet Icons - Using GitHub Organization Avatars for reliability
     const walletIcons = {
         'MetaMask': 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
-        'Rabby Wallet': 'https://raw.githubusercontent.com/RabbyHub/Rabby/develop/src/ui/assets/dashboard/rabby.svg',
-        'Rabby': 'https://raw.githubusercontent.com/RabbyHub/Rabby/develop/src/ui/assets/dashboard/rabby.svg', // Alias
-        'Phantom': 'https://raw.githubusercontent.com/phantom/branding/main/phantom-icon-purple.svg',
+        'Rabby Wallet': 'https://avatars.githubusercontent.com/u/85284334?s=200&v=4', // RabbyHub
+        'Rabby': 'https://avatars.githubusercontent.com/u/85284334?s=200&v=4', // Alias
+        'Phantom': 'https://avatars.githubusercontent.com/u/78782331?s=200&v=4', // Phantom
         'Coinbase Wallet': 'https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg',
-        'WalletConnect': 'https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg',
-        'Rainbow': 'https://raw.githubusercontent.com/rainbow-me/rainbowkit/main/assets/rainbow.svg',
-        'Backpack': 'https://docs.xnfts.dev/img/backpack.svg',
-        'Keplr': 'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/packages/extension/public/assets/logo-256.svg',
-        'Safe': 'https://raw.githubusercontent.com/safe-global/safe-react-apps/main/apps/tx-builder/public/safe-logo.svg',
-        'Trust Wallet': 'https://trustwallet.com/assets/images/media/assets/trust_platform.svg',
-        'Trust': 'https://trustwallet.com/assets/images/media/assets/trust_platform.svg', // Alias
-        'Brave Wallet': 'https://upload.wikimedia.org/wikipedia/commons/5/51/Brave_icon_lionface.svg',
-        'Brave': 'https://upload.wikimedia.org/wikipedia/commons/5/51/Brave_icon_lionface.svg', // Alias
-        'OKX Wallet': 'https://www.okx.com/cdn/assets/imgs/221/530B48007C649C16.png',
-        'BitKeep': 'https://raw.githubusercontent.com/bitkeepwallet/download/main/logo/png/bitkeep_logo_square.png',
-        'Bitget Wallet': 'https://raw.githubusercontent.com/bitkeepwallet/download/main/logo/png/bitkeep_logo_square.png',
+        'WalletConnect': 'https://avatars.githubusercontent.com/u/37784886?s=200&v=4', // WalletConnect
+        'Rainbow': 'https://avatars.githubusercontent.com/u/48327834?s=200&v=4', // Rainbow
+        'Backpack': 'https://avatars.githubusercontent.com/u/87023919?s=200&v=4', // Backpack (Coral)
+        'Keplr': 'https://avatars.githubusercontent.com/u/74381830?s=200&v=4', // Chainapsis (Keplr)
+        'Safe': 'https://avatars.githubusercontent.com/u/102983781?s=200&v=4', // Safe Global
+        'Trust Wallet': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Trust Wallet
+        'Trust': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Alias
+        'Brave Wallet': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Brave Software
+        'Brave': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Alias
+        'OKX Wallet': 'https://avatars.githubusercontent.com/u/23204646?s=200&v=4', // OKX
+        'BitKeep': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4', // Bitget
+        'Bitget Wallet': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4', // Bitget
         'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback for Injected
     }
 
