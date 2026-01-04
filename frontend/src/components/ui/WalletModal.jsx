@@ -5,17 +5,17 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
     // Detect installed wallets by checking if connector is ready
     const installedWallets = connectors.filter(c => c.ready !== false && c.id !== 'walletConnect')
 
-    // Official Wallet Icons
+    // Official Wallet Icons - All high-quality, transparent backgrounds
     const walletIcons = {
         'MetaMask': 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
         'Rabby Wallet': 'https://raw.githubusercontent.com/RabbyHub/Rabby/develop/src/ui/assets/dashboard/rabby.svg',
-        'Phantom': 'https://phantom.app/img/phantom-logo.svg',
-        'Coinbase Wallet': 'https://www.coinbase.com/img/favicon/favicon-32x32.png',
+        'Phantom': 'https://raw.githubusercontent.com/phantom/branding/main/phantom-icon-purple.svg',
+        'Coinbase Wallet': 'https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg',
         'WalletConnect': 'https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg',
         'Rainbow': 'https://raw.githubusercontent.com/rainbow-me/rainbowkit/main/assets/rainbow.svg',
-        'Backpack': 'https://raw.githubusercontent.com/coral-xyz/backpack/master/assets/backpack.png',
-        'Keplr': 'https://www.keplr.app/icons/icon-96x96.png',
-        'Safe': 'https://app.safe.global/favicons/logo_120x120.png',
+        'Backpack': 'https://docs.xnfts.dev/img/backpack.svg',
+        'Keplr': 'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/packages/extension/public/assets/logo-256.svg',
+        'Safe': 'https://raw.githubusercontent.com/safe-global/safe-react-apps/main/apps/tx-builder/public/safe-logo.svg',
         'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback for Injected
     }
 
