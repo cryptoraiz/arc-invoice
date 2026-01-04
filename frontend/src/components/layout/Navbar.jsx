@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useChainId } from 'wagmi'
 import { useInvoiceNotifications } from '../../hooks/useInvoiceNotifications'
@@ -8,7 +8,7 @@ import WalletModal from '../ui/WalletModal'
 
 export default function Navbar() {
   const location = useLocation()
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, connector } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
   const { count: notificationCount } = useInvoiceNotifications()
@@ -24,11 +24,86 @@ export default function Navbar() {
   // Handle network switch
   const handleSwitchNetwork = () => {
     toast.info('Trocando para Arc Testnet...')
-    switchChain({ chainId: arcTestnet.id }).catch(err => {
-      console.error('Erro ao trocar rede:', err)
-      toast.error('Erro ao trocar de rede')
-    })
+    switchChain({ chainId: arcTestnet.id }).catch(() => attemptRawSwitch())
   }
+
+  // Raw Switch Implementation (Fallback)
+  const attemptRawSwitch = async () => {
+    try {
+      const provider = await connector?.getProvider()
+      if (!provider) throw new Error('No provider')
+
+      const chainIdHex = '0x4cef02' // 5042002
+
+      try {
+        await provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }],
+        })
+      } catch (switchError) {
+        // This error code indicates that the chain has not been added to MetaMask.
+        if (switchError.code === 4902 || switchError.data?.originalError?.code === 4902) {
+          await provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: chainIdHex,
+              chainName: 'Arc Network Testnet',
+              nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+              rpcUrls: ['https://rpc.testnet.arc.network'],
+              blockExplorerUrls: ['https://explorer.testnet.arc.network']
+            }]
+          })
+        } else {
+          throw switchError
+        }
+      }
+      return true
+    } catch (rawErr) {
+      console.error("Raw Switch falhou:", rawErr)
+      toast.error('Erro ao trocar rede. Tente manualmente.', { duration: 4000 })
+      return false
+    }
+  }
+
+  // Retry logic for auto-switch
+  useEffect(() => {
+    let mounted = true
+    let retryCount = 0
+    const maxRetries = 2
+
+    const attemptSwitch = async () => {
+      if (!mounted || !isConnected || !chainId || chainId === arcTestnet.id) return
+
+      try {
+        console.log(`Tentativa de Auto-Switch ${retryCount + 1}/${maxRetries}...`)
+        await switchChain({ chainId: arcTestnet.id })
+        toast.success('Rede alterada com sucesso!')
+      } catch (err) {
+        console.warn(`Erro no Auto-Switch (Tentativa ${retryCount + 1}):`, err)
+
+        // Ignora rejeição do usuário
+        if (err.code === 4001 || err.message?.includes('rejected')) return
+
+        // Fallback para Raw Switch na última tentativa ou se erro for crítico
+        if (retryCount >= maxRetries) {
+          console.log("Tentando Fallback Raw...")
+          await attemptRawSwitch()
+        } else {
+          retryCount++
+          setTimeout(attemptSwitch, 1500)
+        }
+      }
+    }
+
+    if (isConnected && chainId && chainId !== arcTestnet.id) {
+      // Initial delay
+      const timer = setTimeout(attemptSwitch, 1500)
+      return () => {
+        mounted = false
+        clearTimeout(timer)
+      }
+    }
+  }, [isConnected, chainId, switchChain, connector])
 
   // Check if on correct network
   const isCorrectNetwork = chainId === arcTestnet.id
