@@ -1,0 +1,374 @@
+import { useState, useEffect } from 'react'
+import { useAccount, useConnect } from 'wagmi'
+import { v4 as uuidv4 } from 'uuid'
+import CurrencySelect from '../ui/CurrencySelect'
+import { savePaymentLink } from '../../utils/localStorage'
+import { invoiceAPI } from '../../services/invoiceService'
+import { toast } from 'sonner'
+
+export default function PaymentForm() {
+  const { address, isConnected } = useAccount()
+  const [formData, setFormData] = useState({
+    name: '',
+    wallet: '',
+    amount: '',
+    currency: 'USDC',
+    description: '',
+  })
+  const [generatedLink, setGeneratedLink] = useState('')
+  const [generatedLinkId, setGeneratedLinkId] = useState('')
+  const [isCopied, setIsCopied] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const { connect, connectors } = useConnect()
+
+  // Helper para obter símbolo da moeda
+  const getCurrencySymbol = (currency) => {
+    return currency === 'EURC' ? '€' : '$'
+  }
+
+  // Track mouse position for spotlight effect
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setMousePosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    })
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    // If not connected, trigger connection instead of submit
+    if (!isConnected) {
+      const injectedConnector = connectors.find(c => c.id === 'injected') || connectors[0]
+      if (injectedConnector) {
+        connect({ connector: injectedConnector })
+      } else {
+        console.error('No connector found')
+      }
+      return
+    }
+
+    // Generate unique link ID
+    const linkId = uuidv4()
+    const fullLink = `${window.location.origin}/pay/${linkId}`
+
+    const invoiceData = {
+      id: linkId,
+      creatorAddress: address, // Who created it (receives money)
+      recipientName: formData.name,
+      recipientWallet: formData.wallet, // Who pays
+      amount: formData.amount.replace(/\./g, '').replace(',', '.'), // Sanitize: 1.000,00 -> 1000.00
+      currency: formData.currency,
+      description: formData.description,
+      status: 'pending',
+      createdAt: Date.now()
+    }
+
+    // 1. Save to localStorage (Local History)
+    savePaymentLink(invoiceData)
+
+    // 2. Send to Backend (For recipient notification)
+    try {
+      // Note: Backend expects 'fromWallet' as the creator (money receiver)
+      // and 'wallet' as the target user (money payer)
+      // We map our frontend fields to backend expected fields if needed,
+      // or ensure backend handles these fields.
+      // Based on typical schema:
+      // fromWallet: address (Creator)
+      // toWallet: formData.wallet (Payer) -- Wait, usually "Recipient of Invoice" is the Payer.
+      // Let's send a standard payload and let backend handle it.
+
+      await invoiceAPI.create({
+        id: linkId,
+        fromWallet: address, // The creator (Receiver of funds)
+        toWallet: formData.wallet,   // The target (Payer of funds)
+        amount: formData.amount.replace(/\./g, '').replace(',', '.'), // Sanitize for backend
+        currency: formData.currency,
+        description: formData.description,
+        recipientName: formData.name
+      })
+      console.log('Invoice synced to backend')
+    } catch (err) {
+      console.error('Failed to sync to backend (offline mode?):', err)
+      // Non-blocking: user still gets the link
+    }
+
+    setGeneratedLinkId(linkId)
+    setGeneratedLink(fullLink)
+    console.log('Payment link created:', linkId)
+  }
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedLink)
+    setIsCopied(true)
+    toast.success('Link copiado para a área de transferência!')
+    setTimeout(() => setIsCopied(false), 2000)
+  }
+
+  // Auto-fill wallet when connected, clear when disconnected
+  useEffect(() => {
+    if (isConnected && address && formData.wallet !== address) {
+      setFormData(prev => ({ ...prev, wallet: address }));
+    } else if (!isConnected && formData.wallet) {
+      // Clear wallet field when disconnected
+      setFormData(prev => ({ ...prev, wallet: '' }));
+    }
+  }, [isConnected, address, formData.wallet]);
+
+  return (
+    <div className="relative group" onMouseMove={handleMouseMove}>
+      {/* Spotlight Effect - Follows cursor */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem] overflow-hidden"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.15), transparent 40%)`
+        }}
+      />
+
+      {/* Card */}
+      <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden transition-all duration-300 group-hover:border-blue-500/30">
+
+        {/* Header - Muda dinamicamente */}
+        <div className="flex items-start gap-3 mb-6 transition-all duration-300">
+          <span className="text-2xl">{generatedLink ? '✨' : '🔗'}</span>
+          <div>
+            <h2 className="text-xl font-bold">{generatedLink ? 'Link Pronto!' : 'Criar Link'}</h2>
+            <p className="text-sm text-gray-400">
+              {generatedLink ? 'Seu link de pagamento foi gerado.' : 'Configure seu pagamento'}
+            </p>
+          </div>
+        </div>
+
+        {!generatedLink ? (
+          /* FORM VIEW */
+          <form onSubmit={handleSubmit} className="space-y-4 animate-[slideDown_0.3s_ease-out]">
+            {/* Nome */}
+            <div className="input-group">
+              <input
+                type="text"
+                className="input-float py-3 text-sm"
+                placeholder=" "
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <label htmlFor="name" className="label-float top-1/2 -translate-y-1/2 text-xs">
+                Nome ou Empresa
+              </label>
+            </div>
+
+            {/* Wallet (Auto-filled & Read-only) */}
+            <div className="input-group opacity-70 relative group/wallet">
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">💼</span>
+                <input
+                  type="text"
+                  className={`input-float pl-10 py-3 text-sm bg-white/5 text-gray-400 
+                    ${!isConnected
+                      ? 'cursor-help placeholder:text-gray-500 hover:placeholder:text-cyan-300 hover:placeholder:drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] hover:placeholder:shadow-black placeholder:transition-all placeholder:duration-300'
+                      : 'cursor-not-allowed'
+                    }`}
+                  placeholder={!isConnected ? "Conecte sua carteira para preencher..." : " "}
+                  id="wallet"
+                  value={formData.wallet}
+                  readOnly
+                />
+                {isConnected && (
+                  <label htmlFor="wallet" className="label-float top-1/2 -translate-y-1/2 text-xs" style={{ left: '40px' }}>
+                    Sua Wallet (Automático)
+                  </label>
+                )}
+              </div>
+
+              {/* Mensagem de Erro/Validação */}
+              {formData.wallet && !/^0x[a-fA-F0-9]{40}$/.test(formData.wallet) && (
+                <div className="absolute -bottom-5 left-0 text-xs text-red-400 font-medium ml-4 flex items-center gap-1">
+                  <span>⚠️ Endereço inválido</span>
+                  <span>({formData.wallet.length}/42 caracteres)</span>
+                </div>
+              )}
+            </div>
+
+            {/* Valor + Moeda */}
+            <div className="grid gap-3 items-start" style={{ gridTemplateColumns: '1.2fr 1fr' }}>
+              {/* Valor */}
+              <div className="input-group">
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
+                    {getCurrencySymbol(formData.currency)}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    className="input-float pl-8 text-xl font-bold"
+                    placeholder="0,00"
+                    id="amount"
+                    style={{ padding: '14px 12px 14px 32px', height: '52px' }}
+                    value={formData.amount}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                      if (value === '') {
+                        setFormData({ ...formData, amount: '' });
+                        return;
+                      }
+                      const numberValue = parseInt(value, 10) / 100;
+                      const formatted = numberValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                      setFormData({ ...formData, amount: formatted });
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Moeda */}
+              <div className="h-[52px]">
+                <CurrencySelect
+                  value={formData.currency}
+                  onChange={(currency) => setFormData({ ...formData, currency })}
+                  compact={true}
+                />
+              </div>
+            </div>
+
+            {/* Taxa Info */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
+              <span className="text-green-400 font-bold text-sm">✓</span>
+              <span className="text-sm text-green-400">Taxa &lt; $0.001 • Instantâneo</span>
+            </div>
+
+            {/* Descrição */}
+            <div className="input-group">
+              <textarea
+                className="input-float resize-none py-3 text-sm"
+                rows="2"
+                placeholder=" "
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              ></textarea>
+              <label htmlFor="description" className="label-float top-3 text-xs">
+                Descrição (opcional)
+              </label>
+            </div>
+
+            {/* Botão Submit / Connect */}
+            <button
+              type={isConnected ? "submit" : "button"}
+              onClick={!isConnected ? (e) => {
+                e.preventDefault();
+                const injectedConnector = connectors.find(c => c.id === 'injected') || connectors[0]
+                if (injectedConnector) {
+                  connect({ connector: injectedConnector })
+                }
+              } : undefined}
+              className={`relative overflow-hidden w-full px-6 py-4 rounded-xl font-bold text-lg text-white flex items-center justify-center gap-2 transition-all ${isConnected
+                ? 'gradient-button'
+                : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20'
+                }`}
+            >
+              {isConnected ? (
+                <>
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_3s_infinite]"></span>
+                  Gerar Link →
+                </>
+              ) : (
+                <>
+                  Conectar Wallet
+                </>
+              )}
+            </button>
+          </form>
+        ) : (
+          /* SUCCESS VIEW */
+          <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
+            {/* Link Box */}
+            <div className="p-1 rounded-2xl bg-gradient-to-r from-green-500/20 to-emerald-500/20">
+              <div className="bg-slate-950/80 backdrop-blur-xl rounded-xl p-5 border border-green-500/20 text-center space-y-4">
+                <div className="mx-auto w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-2xl animate-[bounce_1s_infinite]">
+                  ✓
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">Link de Pagamento</p>
+                  <div className="flex items-center gap-2 bg-black/40 rounded-lg p-2 border border-white/5">
+                    <span className="flex-1 text-sm text-cyan-400 font-mono truncate">{generatedLink}</span>
+                    <button
+                      onClick={copyToClipboard}
+                      className="p-2 hover:bg-white/10 rounded-md transition-colors text-white relative group/copy"
+                      title={isCopied ? "Copiado!" : "Copiar"}
+                    >
+                      {isCopied ? '✅' : '📋'}
+                      {/* Tooltip inline */}
+                      <span className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-1 rounded transition-opacity whitespace-nowrap ${isCopied ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                        Copiado!
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Share Options - Order: Whatsapp > Telegram > Gmail */}
+            <div className="grid grid-cols-3 gap-3">
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Pagamento via Arc Invoice: ${generatedLink}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-[#25D366]/5 border border-[#25D366]/20 hover:bg-[#25D366]/10 hover:scale-105 transition-all group/icon"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#25D366]/20 text-[#25D366] flex items-center justify-center group-hover/icon:bg-[#25D366] group-hover/icon:text-black transition-colors">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
+                </div>
+                <span className="text-[10px] uppercase font-bold text-[#25D366]">WhatsApp</span>
+              </a >
+
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(generatedLink)}&text=${encodeURIComponent('Pagamento via Arc Invoice')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-[#0088cc]/5 border border-[#0088cc]/20 hover:bg-[#0088cc]/10 hover:scale-105 transition-all group/icon"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#0088cc]/20 text-[#0088cc] flex items-center justify-center group-hover/icon:bg-[#0088cc] group-hover/icon:text-white transition-colors">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 11.944 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" /></svg>
+                </div>
+                <span className="text-[10px] uppercase font-bold text-[#0088cc]">Telegram</span>
+              </a>
+
+              <a
+                href={`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent('Pagamento via Arc Invoice')}&body=${encodeURIComponent(`Segue o link para pagamento via Arc Invoice: ${generatedLink}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-red-500/5 border border-red-500/20 hover:bg-red-500/10 hover:scale-105 transition-all group/icon"
+              >
+                <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center group-hover/icon:bg-red-500 group-hover/icon:text-white transition-colors">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" /></svg>
+                </div>
+                <span className="text-[10px] uppercase font-bold text-red-500">Gmail</span>
+              </a>
+            </div >
+
+            {/* Nova Cobrança Button */}
+            <button
+              onClick={() => {
+                setFormData({
+                  name: '',
+                  wallet: '',
+                  amount: '',
+                  currency: 'USDC',
+                  description: '',
+                })
+                setGeneratedLink('')
+              }}
+              className="w-full py-4 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2 group"
+            >
+              <span>+</span>
+              <span className="group-hover:translate-x-1 transition-transform">Criar Novo Link</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

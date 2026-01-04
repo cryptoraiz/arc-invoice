@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply font-sans;
+  }
+
+  body {
+    @apply bg-slate-950 text-white antialiased;
+  }
+
+  /* Remover setas do input number */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@layer components {
+
+  /* Input Float Label */
+  .input-group {
+    @apply relative;
+  }
+
+  .input-float {
+    @apply w-full px-4 py-6 border-2 border-slate-700/20 rounded-2xl transition-all duration-300;
+    background-color: rgb(15 23 42 / 0.5) !important;
+    color: white !important;
+    caret-color: white !important;
+  }
+
+  .input-float:focus {
+    @apply outline-none border-blue-500 ring-4 ring-blue-500/10;
+    background-color: rgb(15 23 42 / 0.5) !important;
+  }
+
+  /* Forçar fundo escuro no autofill/paste */
+  .input-float:-webkit-autofill,
+  .input-float:-webkit-autofill:hover,
+  .input-float:-webkit-autofill:focus,
+  .input-float:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px rgb(15 23 42 / 0.5) inset !important;
+    -webkit-text-fill-color: white !important;
+    border: 2px solid rgb(51 65 85 / 0.2) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .label-float {
+    @apply absolute top-6 left-4 text-slate-400 transition-all duration-300 pointer-events-none;
+  }
+
+  .input-float:focus+.label-float,
+  .input-float:not(:placeholder-shown)+.label-float {
+    @apply opacity-0 invisible;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 bg-clip-text text-transparent;
+  }
+
+  /* Gradient Button */
+  .gradient-button {
+    @apply bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300;
+    box-shadow: 0 0 40px rgba(14, 165, 233, 0.5);
+  }
+
+  .gradient-button:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 8px 60px rgba(14, 165, 233, 0.8);
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 20s ease-in-out infinite;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+
+    33% {
+      transform: translate(20px, -30px);
+    }
+
+    66% {
+      transform: translate(-15px, 20px);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .animate-scaleIn {
+    animation: scaleIn 0.3s ease-out;
+  }
+}

@@ -1,0 +1,20 @@
+{
+    "name": "arcpay-backend",
+    "version": "1.0.0",
+    "description": "ArcPay serverless backend for invoice notifications",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "node server.js",
+        "deploy": "vercel"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "mongodb": "^6.3.0"
+    },
+    "devDependencies": {
+        "vercel": "^33.0.0"
+    }
+}
