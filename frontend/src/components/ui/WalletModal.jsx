@@ -92,8 +92,8 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                                             }}
                                                             className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.07] hover:border-blue-500/30 transition-all group"
                                                         >
-                                                            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white/5">
-                                                                <img src={getWalletIcon(connector.name)} alt={connector.name} className="w-full h-full object-cover" />
+                                                            <div className="w-8 h-8 flex items-center justify-center">
+                                                                <img src={getWalletIcon(connector.name)} alt={connector.name} className="w-full h-full object-contain p-0.5" />
                                                             </div>
                                                             <div className="flex-1 text-left">
                                                                 <div className="font-semibold text-sm text-white group-hover:text-blue-400 transition-colors">
@@ -124,8 +124,8 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                                     key={wallet.name}
                                                     className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] border border-white/5 opacity-60 hover:opacity-100 cursor-not-allowed"
                                                 >
-                                                    <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white/5">
-                                                        <img src={wallet.icon} alt={wallet.name} className="w-full h-full object-cover" />
+                                                    <div className="w-8 h-8 flex items-center justify-center">
+                                                        <img src={wallet.icon} alt={wallet.name} className="w-full h-full object-contain p-0.5" />
                                                     </div>
                                                     <div className="flex-1 text-left">
                                                         <div className="font-semibold text-sm text-gray-400">
