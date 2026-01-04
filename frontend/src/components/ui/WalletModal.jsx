@@ -12,19 +12,19 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
         'WalletConnect': 'https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg',
 
         // Reliable GitHub Avatars (For wallets where direct SVGs breaks)
-        'Rabby Wallet': 'https://avatars.githubusercontent.com/u/85284334?s=200&v=4', // RabbyHub
-        'Rabby': 'https://avatars.githubusercontent.com/u/85284334?s=200&v=4',
+        'Rabby Wallet': 'https://rabby.io/assets/images/logo-128.png',
+        'Rabby': 'https://rabby.io/assets/images/logo-128.png',
         'Phantom': 'https://avatars.githubusercontent.com/u/78782331?s=200&v=4', // Phantom
         'Coinbase Wallet': 'https://avatars.githubusercontent.com/u/1885080?s=200&v=4', // Coinbase
         'Rainbow': 'https://avatars.githubusercontent.com/u/48327834?s=200&v=4', // Rainbow
-        'Backpack': 'https://avatars.githubusercontent.com/u/87023919?s=200&v=4', // Backpack
+        'Backpack': 'https://uploads-ssl.webflow.com/63fac39558371c24c7e0fdc3/64c935dd295d1442bc4fbc87_backpack-icon.png',
         'Keplr': 'https://avatars.githubusercontent.com/u/74381830?s=200&v=4', // Chainapsis
         'Safe': 'https://avatars.githubusercontent.com/u/102983781?s=200&v=4', // Safe Global
         'Trust Wallet': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Trust Wallet
         'Trust': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4',
         'Brave Wallet': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Brave
         'Brave': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4',
-        'OKX Wallet': 'https://avatars.githubusercontent.com/u/23204646?s=200&v=4', // OKX
+        'OKX Wallet': 'https://static.okx.com/cdn/wallet/logo/okx-wallet-logo.png',
         'Bitget Wallet': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4', // Bitget
         'BitKeep': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4',
         'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback
