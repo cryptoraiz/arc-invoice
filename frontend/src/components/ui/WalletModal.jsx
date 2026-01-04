@@ -119,24 +119,26 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                             </h3>
                                         </div>
                                         <div className="space-y-2">
-                                            {popularWallets.map((wallet) => (
-                                                <div
-                                                    key={wallet.name}
-                                                    className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] border border-white/5 opacity-60 hover:opacity-100 cursor-not-allowed"
-                                                >
-                                                    <div className="w-8 h-8 flex items-center justify-center">
-                                                        <img src={wallet.icon} alt={wallet.name} className="w-full h-full object-contain p-0.5" />
-                                                    </div>
-                                                    <div className="flex-1 text-left">
-                                                        <div className="font-semibold text-sm text-gray-400">
-                                                            {wallet.name}
+                                            {popularWallets
+                                                .filter(wallet => !installedWallets.find(w => w.name === wallet.name))
+                                                .map((wallet) => (
+                                                    <div
+                                                        key={wallet.name}
+                                                        className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] border border-white/5 opacity-60 hover:opacity-100 cursor-not-allowed"
+                                                    >
+                                                        <div className="w-8 h-8 flex items-center justify-center">
+                                                            <img src={wallet.icon} alt={wallet.name} className="w-full h-full object-contain p-0.5" />
                                                         </div>
-                                                        <div className="text-xs text-gray-600">
-                                                            {wallet.description}
+                                                        <div className="flex-1 text-left">
+                                                            <div className="font-semibold text-sm text-gray-400">
+                                                                {wallet.name}
+                                                            </div>
+                                                            <div className="text-xs text-gray-600">
+                                                                {wallet.description}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
                                         </div>
                                     </div>
 
