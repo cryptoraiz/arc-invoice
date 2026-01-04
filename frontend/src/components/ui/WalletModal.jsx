@@ -9,6 +9,7 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
     const walletIcons = {
         'MetaMask': 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
         'Rabby Wallet': 'https://raw.githubusercontent.com/RabbyHub/Rabby/develop/src/ui/assets/dashboard/rabby.svg',
+        'Rabby': 'https://raw.githubusercontent.com/RabbyHub/Rabby/develop/src/ui/assets/dashboard/rabby.svg', // Alias
         'Phantom': 'https://raw.githubusercontent.com/phantom/branding/main/phantom-icon-purple.svg',
         'Coinbase Wallet': 'https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg',
         'WalletConnect': 'https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg',
@@ -16,6 +17,13 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
         'Backpack': 'https://docs.xnfts.dev/img/backpack.svg',
         'Keplr': 'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/packages/extension/public/assets/logo-256.svg',
         'Safe': 'https://raw.githubusercontent.com/safe-global/safe-react-apps/main/apps/tx-builder/public/safe-logo.svg',
+        'Trust Wallet': 'https://trustwallet.com/assets/images/media/assets/trust_platform.svg',
+        'Trust': 'https://trustwallet.com/assets/images/media/assets/trust_platform.svg', // Alias
+        'Brave Wallet': 'https://upload.wikimedia.org/wikipedia/commons/5/51/Brave_icon_lionface.svg',
+        'Brave': 'https://upload.wikimedia.org/wikipedia/commons/5/51/Brave_icon_lionface.svg', // Alias
+        'OKX Wallet': 'https://www.okx.com/cdn/assets/imgs/221/530B48007C649C16.png',
+        'BitKeep': 'https://raw.githubusercontent.com/bitkeepwallet/download/main/logo/png/bitkeep_logo_square.png',
+        'Bitget Wallet': 'https://raw.githubusercontent.com/bitkeepwallet/download/main/logo/png/bitkeep_logo_square.png',
         'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback for Injected
     }
 
