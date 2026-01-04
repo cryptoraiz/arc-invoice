@@ -5,26 +5,29 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
     // Detect installed wallets by checking if connector is ready
     const installedWallets = connectors.filter(c => c.ready !== false && c.id !== 'walletConnect')
 
-    // Official Wallet Icons - Using GitHub Organization Avatars for reliability
+    // Official Wallet Icons - Mixed Strategy for Best Results
     const walletIcons = {
+        // High Quality SVGs (Best looking)
         'MetaMask': 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
+        'WalletConnect': 'https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Logo/Blue%20(Default)/Logo.svg',
+
+        // Reliable GitHub Avatars (For wallets where direct SVGs breaks)
         'Rabby Wallet': 'https://avatars.githubusercontent.com/u/85284334?s=200&v=4', // RabbyHub
-        'Rabby': 'https://avatars.githubusercontent.com/u/85284334?s=200&v=4', // Alias
+        'Rabby': 'https://avatars.githubusercontent.com/u/85284334?s=200&v=4',
         'Phantom': 'https://avatars.githubusercontent.com/u/78782331?s=200&v=4', // Phantom
-        'Coinbase Wallet': 'https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg',
-        'WalletConnect': 'https://avatars.githubusercontent.com/u/37784886?s=200&v=4', // WalletConnect
+        'Coinbase Wallet': 'https://avatars.githubusercontent.com/u/1885080?s=200&v=4', // Coinbase
         'Rainbow': 'https://avatars.githubusercontent.com/u/48327834?s=200&v=4', // Rainbow
-        'Backpack': 'https://avatars.githubusercontent.com/u/87023919?s=200&v=4', // Backpack (Coral)
-        'Keplr': 'https://avatars.githubusercontent.com/u/74381830?s=200&v=4', // Chainapsis (Keplr)
+        'Backpack': 'https://avatars.githubusercontent.com/u/87023919?s=200&v=4', // Backpack
+        'Keplr': 'https://avatars.githubusercontent.com/u/74381830?s=200&v=4', // Chainapsis
         'Safe': 'https://avatars.githubusercontent.com/u/102983781?s=200&v=4', // Safe Global
         'Trust Wallet': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Trust Wallet
-        'Trust': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Alias
-        'Brave Wallet': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Brave Software
-        'Brave': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Alias
+        'Trust': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4',
+        'Brave Wallet': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Brave
+        'Brave': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4',
         'OKX Wallet': 'https://avatars.githubusercontent.com/u/23204646?s=200&v=4', // OKX
-        'BitKeep': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4', // Bitget
         'Bitget Wallet': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4', // Bitget
-        'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback for Injected
+        'BitKeep': 'https://avatars.githubusercontent.com/u/102781488?s=200&v=4',
+        'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback
     }
 
     const popularWallets = [
