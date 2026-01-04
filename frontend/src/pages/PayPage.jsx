@@ -447,57 +447,48 @@ export default function PayPage() {
                                     </div>
                                 </div>
 
-                                {/* Network Warning Banner */}
-                                {isConnected && chainId && chainId !== arcTestnet.id && (
-                                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 space-y-3">
-                                        <div className="flex items-start gap-3">
-                                            <div className="text-2xl">⚠️</div>
-                                            <div className="flex-1">
-                                                <h4 className="text-sm font-bold text-red-400 mb-1">
-                                                    Rede Incorreta Detectada
-                                                </h4>
-                                                <p className="text-xs text-gray-300 mb-3">
-                                                    Você está conectado em outra rede. Para pagar, você precisa estar na <span className="font-semibold text-white">Arc Testnet</span>.
-                                                </p>
-                                                <button
-                                                    onClick={() => {
-                                                        toast.info('Trocando para Arc Testnet...')
-                                                        switchChain({ chainId: arcTestnet.id }).catch(err => {
-                                                            console.error('Erro ao trocar rede:', err)
-                                                            toast.error('Erro ao trocar de rede')
-                                                        })
-                                                    }}
-                                                    className="w-full px-4 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors"
-                                                >
-                                                    Trocar para Arc Testnet
-                                                </button>
-                                            </div>
+                                {/* Network Status & Action Area */}
+                                {isConnected && chainId && chainId !== arcTestnet.id ? (
+                                    <div className="space-y-3">
+                                        {/* Compact Error Message */}
+                                        <div className="flex items-center justify-center gap-2 text-amber-500 bg-amber-500/10 py-2 px-3 rounded-lg border border-amber-500/20">
+                                            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                            <span className="text-xs font-medium">Rede incorreta detectada</span>
                                         </div>
-                                    </div>
-                                )}
 
-                                {/* Botão de Ação */}
-                                {!isConnected ? (
+                                        {/* Switch Network Button */}
+                                        <button
+                                            onClick={() => {
+                                                toast.info('Trocando para Arc Testnet...')
+                                                switchChain({ chainId: arcTestnet.id }).catch(err => {
+                                                    console.error('Erro ao trocar rede:', err)
+                                                    toast.error('Erro ao trocar de rede')
+                                                })
+                                            }}
+                                            className="w-full px-6 py-3 rounded-xl font-bold text-base bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 group"
+                                        >
+                                            <span>Trocar para Arc Testnet</span>
+                                            <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ) : !isConnected ? (
                                     <div className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/10">
                                         <p className="text-sm text-gray-400 mb-2">
-                                            Conecte sua wallet no topo da página para pagar
+                                            Conecte sua wallet para pagar
                                         </p>
                                         <p className="text-xs text-gray-500">
-                                            Clique no botão "Conectar Wallet" no cabeçalho
+                                            Utilize o botão "Conectar Wallet" no topo
                                         </p>
                                     </div>
-                                ) : (chainId && chainId !== arcTestnet.id) ? (
-                                    <button
-                                        disabled
-                                        className="w-full px-6 py-3 rounded-xl font-bold text-base bg-gray-700 text-gray-400 cursor-not-allowed"
-                                    >
-                                        Troque para Arc Testnet Primeiro
-                                    </button>
                                 ) : (
                                     <button
                                         onClick={handlePayment}
                                         disabled={isPaying}
-                                        className="w-full px-6 py-3 rounded-xl font-bold text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:-translate-y-0.5 transition-transform shadow-lg shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full px-6 py-3 rounded-xl font-bold text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                     >
                                         {isPaying || isConfirming ? (
                                             <span className="flex items-center justify-center gap-2">
