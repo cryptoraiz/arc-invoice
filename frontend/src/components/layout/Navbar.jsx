@@ -65,23 +65,48 @@ export default function Navbar() {
     }
   }
 
-  // Retry logic for auto-switch
+  // Auto-switch with chainId polling
   useEffect(() => {
+    if (!isConnected) {
+      console.log('❌ Not connected, skipping auto-switch')
+      return
+    }
+
     let mounted = true
+    let pollAttempts = 0
+    const maxPollAttempts = 10 // Poll for 5 seconds total
     let retryCount = 0
     const maxRetries = 2
 
-    const attemptSwitch = async () => {
-      if (!mounted || !isConnected || !chainId || chainId === arcTestnet.id) {
-        console.log('🔍 Auto-Switch abortado:', {
-          mounted,
-          isConnected,
-          chainId,
-          arcTestnetId: arcTestnet.id,
-          needsSwitch: chainId !== arcTestnet.id
-        })
+    // Poll for chainId if not immediately available
+    const pollForChainId = () => {
+      if (!mounted) return
+
+      console.log(`🔍 Polling for chainId (attempt ${pollAttempts + 1}/${maxPollAttempts})`, { chainId, isConnected })
+
+      if (!chainId) {
+        pollAttempts++
+        if (pollAttempts < maxPollAttempts) {
+          setTimeout(pollForChainId, 500)
+        } else {
+          console.error('❌ chainId não foi detectado após 5s - possível problema com a carteira')
+          toast.error('Erro ao detectar rede. Tente desconectar e reconectar.')
+        }
         return
       }
+
+      // chainId foi detectado, verificar se precisa trocar
+      if (chainId === arcTestnet.id) {
+        console.log('✅ Já está na Arc Testnet')
+        return
+      }
+
+      console.log('🚀 chainId detectado, iniciando auto-switch...')
+      attemptSwitch()
+    }
+
+    const attemptSwitch = async () => {
+      if (!mounted || !chainId || chainId === arcTestnet.id) return
 
       console.log(`🔄 Auto-Switch iniciado - Tentativa ${retryCount + 1}/${maxRetries + 1}`, {
         currentChain: chainId,
@@ -102,7 +127,7 @@ export default function Navbar() {
           return
         }
 
-        // Fallback para Raw Switch na última tentativa ou se erro for crítico
+        // Fallback para Raw Switch na última tentativa
         if (retryCount >= maxRetries) {
           console.log("🔧 Tentando Fallback Raw Switch...")
           const success = await attemptRawSwitch()
@@ -117,14 +142,11 @@ export default function Navbar() {
       }
     }
 
-    if (isConnected && chainId && chainId !== arcTestnet.id) {
-      console.log('🚀 Agendando Auto-Switch em 500ms...')
-      // Initial delay
-      const timer = setTimeout(attemptSwitch, 500)
-      return () => {
-        mounted = false
-        clearTimeout(timer)
-      }
+    // Start polling
+    pollForChainId()
+
+    return () => {
+      mounted = false
     }
   }, [isConnected, chainId, switchChain, connector])
 
