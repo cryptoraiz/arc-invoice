@@ -65,7 +65,7 @@ export default function Navbar() {
     }
   }
 
-  // Auto-switch with chainId polling
+  // Auto-switch with REAL chainId verification (bypass Rabby cache bug)
   useEffect(() => {
     if (!isConnected) {
       console.log('❌ Not connected, skipping auto-switch')
@@ -78,13 +78,36 @@ export default function Navbar() {
     let retryCount = 0
     const maxRetries = 2
 
+    // Get REAL chainId from provider (bypass wagmi cache)
+    const getRealChainId = async () => {
+      try {
+        const provider = await connector?.getProvider()
+        if (!provider) return null
+
+        const hexChainId = await provider.request({ method: 'eth_chainId' })
+        const realChainId = parseInt(hexChainId, 16)
+        console.log('🔍 Real chainId from provider:', { hexChainId, realChainId, wagmiChainId: chainId })
+        return realChainId
+      } catch (err) {
+        console.error('❌ Erro ao obter chainId do provider:', err)
+        return null
+      }
+    }
+
     // Poll for chainId if not immediately available
-    const pollForChainId = () => {
+    const pollForChainId = async () => {
       if (!mounted) return
 
-      console.log(`🔍 Polling for chainId (attempt ${pollAttempts + 1}/${maxPollAttempts})`, { chainId, isConnected })
+      // Get real chainId from provider
+      const realChainId = await getRealChainId()
 
-      if (!chainId) {
+      console.log(`🔍 Polling (attempt ${pollAttempts + 1}/${maxPollAttempts})`, {
+        realChainId,
+        wagmiChainId: chainId,
+        isConnected
+      })
+
+      if (!realChainId) {
         pollAttempts++
         if (pollAttempts < maxPollAttempts) {
           setTimeout(pollForChainId, 500)
@@ -96,20 +119,30 @@ export default function Navbar() {
       }
 
       // chainId foi detectado, verificar se precisa trocar
-      if (chainId === arcTestnet.id) {
-        console.log('✅ Já está na Arc Testnet')
+      if (realChainId === arcTestnet.id) {
+        console.log('✅ Já está na Arc Testnet (verificado no provider)')
         return
       }
 
-      console.log('🚀 chainId detectado, iniciando auto-switch...')
+      console.log('🚀 chainId diferente detectado, iniciando auto-switch...', {
+        from: realChainId,
+        to: arcTestnet.id
+      })
       attemptSwitch()
     }
 
     const attemptSwitch = async () => {
-      if (!mounted || !chainId || chainId === arcTestnet.id) return
+      if (!mounted) return
+
+      // Verify again before switching
+      const realChainId = await getRealChainId()
+      if (realChainId === arcTestnet.id) {
+        console.log('✅ Rede já foi alterada')
+        return
+      }
 
       console.log(`🔄 Auto-Switch iniciado - Tentativa ${retryCount + 1}/${maxRetries + 1}`, {
-        currentChain: chainId,
+        currentChain: realChainId,
         targetChain: arcTestnet.id,
         connector: connector?.name
       })
