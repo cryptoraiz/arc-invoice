@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi'
-import { mainnet } from 'wagmi/chains'
+import { mainnet, arbitrum, polygon, optimism, base } from 'wagmi/chains'
 
 // Arc Network Testnet Configuration
 export const arcTestnet = {
@@ -21,9 +21,13 @@ export const arcTestnet = {
 }
 
 export const config = createConfig({
-  chains: [arcTestnet, mainnet],
+  chains: [arcTestnet, mainnet, arbitrum, polygon, optimism, base],
   transports: {
     [arcTestnet.id]: http(),
     [mainnet.id]: http(),
+    [arbitrum.id]: http(),
+    [polygon.id]: http(),
+    [optimism.id]: http(),
+    [base.id]: http(),
   },
 })

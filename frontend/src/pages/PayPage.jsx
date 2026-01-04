@@ -112,6 +112,14 @@ export default function PayPage() {
         }
         if (writeError) {
             setIsPaying(false)
+
+            // Silenciar erro de rejeição do usuário
+            if (writeError.message?.toLowerCase().includes('user rejected') ||
+                writeError.shortMessage?.toLowerCase().includes('user rejected')) {
+                console.log("Transação cancelada pelo usuário")
+                return
+            }
+
             console.error("Payment Error:", writeError)
             toast.error("Erro no pagamento: " + (writeError.shortMessage || "Falha na transação"))
         }
