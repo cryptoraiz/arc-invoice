@@ -35,7 +35,28 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
     ]
 
     const getWalletIcon = (name) => {
-        return walletIcons[name] || walletIcons['Injected']
+        if (!name) return walletIcons['Injected']
+
+        // Direct match
+        if (walletIcons[name]) return walletIcons[name]
+
+        // Fuzzy match for common wallets
+        const lowerName = name.toLowerCase()
+        if (lowerName.includes('rabby')) return walletIcons['Rabby Wallet']
+        if (lowerName.includes('phantom')) return walletIcons['Phantom']
+        if (lowerName.includes('backpack')) return walletIcons['Backpack']
+        if (lowerName.includes('rainbow')) return walletIcons['Rainbow']
+        if (lowerName.includes('metamask')) return walletIcons['MetaMask']
+        if (lowerName.includes('coinbase')) return walletIcons['Coinbase Wallet']
+        if (lowerName.includes('okx')) return walletIcons['OKX Wallet']
+        if (lowerName.includes('trust')) return walletIcons['Trust Wallet']
+        if (lowerName.includes('brave')) return walletIcons['Brave Wallet']
+        if (lowerName.includes('bitget') || lowerName.includes('bitkeep')) return walletIcons['Bitget Wallet']
+        if (lowerName.includes('keplr')) return walletIcons['Keplr']
+        if (lowerName.includes('safe')) return walletIcons['Safe']
+        if (lowerName.includes('walletconnect')) return walletIcons['WalletConnect']
+
+        return walletIcons['Injected']
     }
 
     return (
