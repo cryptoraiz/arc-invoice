@@ -36,6 +36,45 @@ export default function FaucetPage() {
         return () => clearInterval(interval);
     }, []);
 
+    // Persistent Fireworks Logic 🎆
+    useEffect(() => {
+        if (!showShareModal) return;
+
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 };
+        const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+        const interval = setInterval(() => {
+            // Left burst
+            confetti({
+                ...defaults,
+                particleCount: 80,
+                startVelocity: 45,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            });
+            // Right burst
+            confetti({
+                ...defaults,
+                particleCount: 80,
+                startVelocity: 45,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            });
+            // Center random burst (occasionally)
+            if (Math.random() > 0.5) {
+                confetti({
+                    ...defaults,
+                    particleCount: 60,
+                    startVelocity: 55,
+                    origin: { x: randomInRange(0.4, 0.6), y: Math.random() - 0.2 }
+                });
+            }
+        }, 800); // Fire much faster (every 0.8s)
+
+        // Fire huge burst immediately on start
+        confetti({ ...defaults, particleCount: 150, spread: 100, origin: { y: 0.6 } });
+
+        return () => clearInterval(interval);
+    }, [showShareModal]);
+
     // Generate snow flakes
     const snowflakes = Array.from({ length: 50 }).map((_, i) => (
         <div
@@ -82,35 +121,6 @@ export default function FaucetPage() {
             setTxHash(data.txHash);
             toast.success("50 USDC enviados! 🎉");
             fetchStats(); // Update immediately
-
-            // Fireworks Effect 🎆
-            const duration = 3 * 1000;
-            const animationEnd = Date.now() + duration;
-            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 };
-
-            const randomInRange = (min, max) => Math.random() * (max - min) + min;
-
-            const interval = setInterval(function () {
-                const timeLeft = animationEnd - Date.now();
-
-                if (timeLeft <= 0) {
-                    return clearInterval(interval);
-                }
-
-                const particleCount = 50 * (timeLeft / duration);
-
-                confetti({
-                    ...defaults,
-                    particleCount,
-                    origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-                });
-                confetti({
-                    ...defaults,
-                    particleCount,
-                    origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-                });
-            }, 250);
-
             setShowShareModal(true);
 
         } catch (error) {
@@ -256,7 +266,7 @@ export default function FaucetPage() {
             {showShareModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowShareModal(false)}></div>
-                    <div className="relative bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full animate-scaleIn">
+                    <div className="relative bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-md w-full animate-scaleIn">
                         <button
                             onClick={() => setShowShareModal(false)}
                             className="absolute top-4 right-4 text-gray-400 hover:text-white"
