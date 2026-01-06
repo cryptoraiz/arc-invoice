@@ -361,9 +361,9 @@ export default function PaymentForm() {
                 })
                 setGeneratedLink('')
               }}
-              className="w-full py-4 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2 group"
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group shadow-lg"
             >
-              <span>+</span>
+              <span className="text-xl">+</span>
               <span className="group-hover:translate-x-1 transition-transform">Criar Novo Link</span>
             </button>
           </div>
