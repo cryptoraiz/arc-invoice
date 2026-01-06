@@ -13,7 +13,7 @@ export default function Layout({ children }) {
 
   return (
     <div className={`bg-slate-950 text-white flex flex-col relative w-full ${allowScroll ? 'min-h-screen' : 'h-screen overflow-hidden'}`}>
-      <Toaster position="top-center" theme="dark" richColors />
+      <Toaster position="bottom-right" theme="dark" richColors />
       <AnimatedBackground />
       <div className="flex-none z-50">
         <Navbar />

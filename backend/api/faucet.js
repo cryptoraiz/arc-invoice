@@ -61,7 +61,7 @@ export const faucetHandler = async (req, res) => {
             [address, cooldownTime]
         );
 
-        if (existingClaim.rows.length > 0) {
+        if (false && existingClaim.rows.length > 0) {
             const lastClaim = Number(existingClaim.rows[0].claimed_at);
             const nextClaim = lastClaim + (COOLDOWN_HOURS * 60 * 60 * 1000);
             const hoursLeft = Math.ceil((nextClaim - Date.now()) / (1000 * 60 * 60));

@@ -19,13 +19,22 @@ export default function FaucetPage() {
     const [showShareModal, setShowShareModal] = useState(false)
     const [stats, setStats] = useState({ claims: 0, totalDistributed: 0, uniqueWallets: 0 })
 
-    // Fetch stats on mount
+    // Poll stats every 5 seconds
+    const fetchStats = async () => {
+        try {
+            const res = await fetch(`${FAUCET_API_URL}/stats`);
+            const data = await res.json();
+            setStats(data);
+        } catch (error) {
+            console.error("Error fetching stats:", error);
+        }
+    };
+
     useEffect(() => {
-        fetch(`${FAUCET_API_URL}/stats`)
-            .then(res => res.json())
-            .then(data => setStats(data))
-            .catch(() => { })
-    }, [])
+        fetchStats(); // Initial load
+        const interval = setInterval(fetchStats, 5000); // Poll every 5s
+        return () => clearInterval(interval);
+    }, []);
 
     // Generate snow flakes
     const snowflakes = Array.from({ length: 50 }).map((_, i) => (
@@ -72,11 +81,12 @@ export default function FaucetPage() {
 
             setTxHash(data.txHash);
             toast.success("50 USDC enviados! 🎉");
+            fetchStats(); // Update immediately
 
             // Fireworks Effect 🎆
             const duration = 3 * 1000;
             const animationEnd = Date.now() + duration;
-            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 };
 
             const randomInRange = (min, max) => Math.random() * (max - min) + min;
 
@@ -271,9 +281,10 @@ export default function FaucetPage() {
                                     href={shareUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="p-3 rounded-xl bg-[#1DA1F2]/10 border border-[#1DA1F2]/20 hover:bg-[#1DA1F2]/20 text-[#1DA1F2] font-semibold flex items-center justify-center gap-2 transition-colors text-sm"
+                                    className="p-3 rounded-xl bg-[#1DA1F2] hover:bg-[#1a91da] text-white font-bold flex items-center justify-center gap-2 transition-all text-sm shadow-lg shadow-[#1DA1F2]/20 hover:shadow-[#1DA1F2]/40 hover:scale-105 animate-pulse"
                                 >
-                                    Twitter
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" /></svg>
+                                    Compartilhar no Twitter
                                 </a>
                                 <button
                                     onClick={() => {
