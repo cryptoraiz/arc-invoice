@@ -127,15 +127,15 @@ export default function PaymentForm() {
       />
 
       {/* Card */}
-      <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden transition-all duration-300 group-hover:border-blue-500/30">
+      <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-blue-500/20 rounded-[2rem] p-6 md:p-8 shadow-[0_0_40px_rgba(37,99,235,0.15)] overflow-hidden transition-all duration-300 group-hover:border-blue-500/40 group-hover:shadow-[0_0_60px_rgba(37,99,235,0.25)]">
 
         {/* Header - Muda dinamicamente */}
         <div className="flex items-start gap-3 mb-6 transition-all duration-300">
-          <span className="text-2xl">{generatedLink ? '✨' : '🔗'}</span>
+          <span className="text-2xl">{generatedLink ? '✨' : '💎'}</span>
           <div>
-            <h2 className="text-xl font-bold">{generatedLink ? 'Link Pronto!' : 'Criar Link'}</h2>
+            <h2 className="text-xl font-bold">{generatedLink ? 'Cobrança Criada!' : 'Nova Cobrança'}</h2>
             <p className="text-sm text-gray-400">
-              {generatedLink ? 'Seu link de pagamento foi gerado.' : 'Configure seu pagamento'}
+              {generatedLink ? 'Link de pagamento pronto para envio.' : 'Configure os detalhes do pagamento'}
             </p>
           </div>
         </div>
@@ -271,7 +271,7 @@ export default function PaymentForm() {
               {isConnected ? (
                 <>
                   <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_3s_infinite]"></span>
-                  Gerar Link →
+                  Gerar Cobrança →
                 </>
               ) : (
                 <>
@@ -364,7 +364,7 @@ export default function PaymentForm() {
               className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group shadow-lg"
             >
               <span className="text-xl">+</span>
-              <span className="group-hover:translate-x-1 transition-transform">Criar Novo Link</span>
+              <span className="group-hover:translate-x-1 transition-transform">Nova Cobrança</span>
             </button>
           </div>
         )}
