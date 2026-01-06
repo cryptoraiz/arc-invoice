@@ -112,7 +112,7 @@ export default function FaucetPage() {
         }
     }
 
-    const shareText = `Acabei de receber 50 USDC na Arc Testnet usando o Faucet da Arc Invoice! 🚀\n\nAbasteça sua carteira agora:\nhttps://arcinvoice.app/faucet\n\n#ArcNetwork #DeFi #Web3`
+    const shareText = `Acabei de receber 50 USDC na Arc Testnet usando o Faucet da Arc Invoice! 🚀\n\nAbasteça sua carteira agora:\nhttps://arcinvoice.xyz/faucet\n\n#ArcNetwork #DeFi #Web3`
     const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
     return (
