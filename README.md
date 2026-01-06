@@ -40,7 +40,8 @@ Arc Invoice cria **payment links profissionais** que:
 
 ### **Backend:**
 - Node.js + Express
-- MongoDB (Serverless) (Implementado)
+- PostgreSQL (Supabase/Neon) (Migrado de MongoDB)
+- Ethers.js v6
 
 ### **Blockchain:**
 - Arc Network Testnet
@@ -49,29 +50,29 @@ Arc Invoice cria **payment links profissionais** que:
 
 ---
 
-## 📦 Instalação
+## 📦 Instalação (Simples)
 
 ### **1. Clone o repositório:**
 ```bash
-git clone https://github.com/seu-user/arc-invoice.git
-cd arc-invoice/frontend
+git clone https://github.com/cryptoraiz/arc-invoice.git
+cd arc-invoice
 ```
 
 ### **2. Instale dependências:**
 ```bash
-npm install
+cd frontend && npm install
+cd ../backend && npm install
 ```
 
-### **3. Configure variáveis de ambiente:**
-```bash
-cp .env.example .env
-```
-Edite `.env` com suas chaves.
+### **3. Configure a Base de Dados:**
+Crie um banco PostgreSQL e pegue a string de conexão. Renomeie o `.env.example` para `.env` no backend e adicione sua URL.
 
-### **4. Rode o projeto:**
+### **4. Rode tudo junto:**
+Basta executar o script automático na raiz:
 ```bash
-npm run dev
+./start-dev.bat
 ```
+(Isso iniciará Frontend e Backend simultaneamente em janelas separadas)
 
 Acesse: `http://localhost:5173`
 
