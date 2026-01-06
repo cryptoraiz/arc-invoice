@@ -11,7 +11,7 @@ export default function FAQPage() {
     },
     {
       question: 'Quanto custa usar o Arc Invoice?',
-      answer: 'Grátis para criar links! Você paga apenas a taxa de rede da Arc: ~$0.001 USDC (um décimo de centavo) por transação. Sem mensalidades ou taxas escondidas.'
+      answer: 'Grátis para criar links! Você paga apenas a taxa de rede da Arc: ~$0.01 USDC (um décimo de centavo) por transação. Sem mensalidades ou taxas escondidas.'
     },
     {
       question: 'Preciso de uma wallet cripto?',

@@ -235,7 +235,7 @@ export default function PaymentForm() {
             {/* Taxa Info */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
               <span className="text-green-400 font-bold text-sm">✓</span>
-              <span className="text-sm text-green-400">Taxa &lt; $0.001 • Instantâneo</span>
+              <span className="text-sm text-green-400">Taxa &lt; $0.01 • Instantâneo</span>
             </div>
 
             {/* Descrição */}

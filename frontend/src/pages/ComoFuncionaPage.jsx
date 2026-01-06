@@ -109,7 +109,7 @@ export default function ComoFuncionaPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-green-400">✓</span>
-                  <span className="text-gray-300">Taxa mínima ($0.001)</span>
+                  <span className="text-gray-300">Taxa mínima ($0.01)</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-green-400">✓</span>
