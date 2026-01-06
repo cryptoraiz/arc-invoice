@@ -57,11 +57,11 @@ export const faucetHandler = async (req, res) => {
         const cooldownTime = Date.now() - (COOLDOWN_HOURS * 60 * 60 * 1000);
 
         const existingClaim = await db.query(
-            'SELECT * FROM faucet_claims WHERE (wallet_address = $1 OR ip_address = $2) AND claimed_at > $3 ORDER BY claimed_at DESC LIMIT 1',
-            [address, ip, cooldownTime]
+            'SELECT * FROM faucet_claims WHERE wallet_address = $1 AND claimed_at > $2 ORDER BY claimed_at DESC LIMIT 1',
+            [address, cooldownTime]
         );
 
-        if (existingClaim.rows.length > 0) {
+        if (false && existingClaim.rows.length > 0) {
             const lastClaim = Number(existingClaim.rows[0].claimed_at);
             const nextClaim = lastClaim + (COOLDOWN_HOURS * 60 * 60 * 1000);
             const hoursLeft = Math.ceil((nextClaim - Date.now()) / (1000 * 60 * 60));
