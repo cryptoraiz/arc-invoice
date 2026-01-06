@@ -2,13 +2,13 @@ import './env.js'; // MUST BE FIRST
 import express from 'express';
 import cors from 'cors';
 import createInvoice from './api/invoices/create.js';
-// import getInvoices from './api/invoices/[wallet].js'; // OLD
-import getInvoices from './api/invoices/wallet_debug.js'; // NEW DEBUG
+import getInvoices from './api/invoices/wallet.js';
 import getInvoiceById from './api/invoices/get.js';
 import deleteInvoice from './api/invoices/delete.js';
 import updateInvoice from './api/invoices/update.js';
+import { faucetHandler, faucetStatsHandler } from './api/faucet.js';
 
-console.log('🔥 SERVER.JS RELOADED! New routes active.');
+console.log('🔥 SERVER.JS RELOADED! Faucet Active.');
 
 const app = express();
 const port = process.env.PORT || 5000; // Alterado para 5000 para liberar a 3000 para o Frontend
@@ -35,6 +35,8 @@ app.get('/api/invoices/get', adapt(getInvoiceById)); // Specific route first
 app.get('/api/invoices/:wallet', adapt(getInvoices));
 app.delete('/api/invoices/:wallet', adapt(deleteInvoice));
 app.post('/api/invoices/update', adapt(updateInvoice));
+app.post('/api/faucet', adapt(faucetHandler));
+app.get('/api/faucet/stats', adapt(faucetStatsHandler));
 
 // Health check
 app.get('/', (req, res) => {
@@ -44,6 +46,6 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`
 🚀 Server running at http://localhost:${port}
-📝 MongoDB URI: ${process.env.MONGODB_URI ? 'Loaded ✅' : 'Missing ❌'}
+🐘 PostgreSQL: ${process.env.POSTGRES_URL ? 'Configured ✅' : 'Missing ❌'}
   `);
 });

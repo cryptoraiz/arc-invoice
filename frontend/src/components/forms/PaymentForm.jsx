@@ -102,7 +102,7 @@ export default function PaymentForm() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedLink)
     setIsCopied(true)
-    toast.success('Link copiado para a área de transferência!')
+    // toast.success('Link copiado para a área de transferência!')
     setTimeout(() => setIsCopied(false), 2000)
   }
 

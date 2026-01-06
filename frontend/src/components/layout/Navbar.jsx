@@ -150,7 +150,7 @@ export default function Navbar() {
       try {
         await switchChain({ chainId: arcTestnet.id })
         console.log('✅ Auto-Switch bem-sucedido!')
-        toast.success('Rede alterada com sucesso!')
+        // toast.success('Rede alterada com sucesso!')
       } catch (err) {
         console.warn(`⚠️ Erro no Auto-Switch (Tentativa ${retryCount + 1}):`, err)
 
@@ -259,20 +259,29 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               {/* Faucet Button */}
               <div className="relative">
-                <a
-                  href="https://faucet.circle.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/faucet"
                   className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition flex items-center gap-2"
                 >
                   💧 Faucet
-                </a>
+                </Link>
               </div>
 
               {/* Wallet Button */}
               {isConnected ? (
                 <button
-                  onClick={() => disconnect()}
+                  onClick={() => {
+                    // Force disconnect all connectors to prevent auto-reconnect to another wallet
+                    connectors.forEach(c => {
+                      try {
+                        disconnect({ connector: c })
+                      } catch (e) {
+                        console.error('Error disconnecting connector:', e)
+                      }
+                    })
+                    // Ensure local state is cleared too (fallback)
+                    disconnect()
+                  }}
                   className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition"
                 >
                   {address?.slice(0, 6)}...{address?.slice(-4)}

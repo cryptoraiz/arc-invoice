@@ -1,6 +1,6 @@
 # Arc Invoice Backend
 
-Backend serverless para notificações de invoices usando Vercel Functions + MongoDB.
+Backend Node.js para Arc Invoice, utilizando PostgreSQL e Express.
 
 ## 🚀 Setup
 
@@ -11,15 +11,16 @@ cd backend
 npm install
 ```
 
-### 2. Configurar MongoDB
+### 2. Configurar Banco de Dados (PostgreSQL)
 
-1. Crie uma conta gratuita no [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Crie um cluster M0 (grátis)
-3. Copie a connection string
-4. Crie um arquivo `.env.local`:
+1. Crie um banco de dados PostgreSQL local ou na nuvem (ex: Neon.tech, Supabase).
+2. Execute o script de criação de tabelas (ver `GUIA_CRIAR_BANCO.md`).
+3. Crie um arquivo `.env.local` na pasta backend:
 
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/arc-invoice?retryWrites=true&w=majority
+POSTGRES_URL=postgres://user:password@host:port/database
+FAUCET_PRIVATE_KEY=sua_private_key_para_faucet
+ARC_RPC_URL=https://testnet.arc.io
 ```
 
 ### 3. Rodar localmente
@@ -28,69 +29,31 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/arc-invoice?retr
 npm run dev
 ```
 
-Vai rodar em `http://localhost:3000`
-
-### 4. Deploy para Vercel
-
-```bash
-npm run deploy
-```
+Vai rodar em `http://localhost:5000`
 
 ## 📋 API Endpoints
 
 ### POST `/api/invoices/create`
 Criar um novo invoice
 
-**Body:**
-```json
-{
-  "id": "uuid-v4",
-  "fromWallet": "0xabc...",
-  "recipientWallet": "0x123...",
-  "recipientName": "João Silva",
-  "amount": "100",
-  "currency": "USDC",
-  "description": "Pagamento do projeto"
-}
-```
-
 ### GET `/api/invoices/[wallet]`
 Buscar invoices para uma carteira
 
-**Exemplo:**
-```
-GET /api/invoices/0x123...
-```
+### POST `/api/invoices/update`
+Atualizar status do invoice (Pago/Cancelado)
 
-### PATCH `/api/invoices/update`
-Atualizar status do invoice
-
-**Body:**
-```json
-{
-  "id": "uuid-v4",
-  "status": "paid",
-  "txHash": "0xtx...",
-  "payer": "0xpayer..."
-}
-```
-
-## 🔒 Variáveis de Ambiente
-
-- `MONGODB_URI`: Connection string do MongoDB Atlas
+### POST `/api/faucet`
+Solicitar tokens de teste
 
 ## 📦 Estrutura
 
 ```
 backend/
 ├── api/
-│   └── invoices/
-│       ├── create.js      # POST criar invoice
-│       ├── [wallet].js    # GET buscar invoices
-│       └── update.js      # PATCH atualizar status
+│   ├── invoices/      # Rotas de Invoice
+│   └── faucet.js      # Rotas de Faucet
 ├── lib/
-│   └── mongodb.js         # MongoDB connection
-├── package.json
-├── vercel.json            # Vercel config
-└── README.md
+│   └── store.js       # PostgreSQL Connection & Logic
+├── server.js          # Express Server Entrypoint
+└── package.json
 ```

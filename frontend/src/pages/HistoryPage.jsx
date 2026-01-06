@@ -115,7 +115,7 @@ export default function HistoryPage() {
     // Helper to check if expired (older than 24h)
     const isExpired = (item) => {
         if (item.status === 'paid') return false;
-        const created = new Date(item.createdAt).getTime();
+        const created = new Date(Number(item.createdAt)).getTime();
         const now = Date.now();
         const expirationTime = 24 * 60 * 60 * 1000; // 24h Standard
         // const expirationTime = 2 * 60 * 1000; // 2min Test
@@ -124,7 +124,7 @@ export default function HistoryPage() {
 
     // Helper for countdown display
     const getTimeRemaining = (createdAt) => {
-        const created = new Date(createdAt).getTime();
+        const created = new Date(Number(createdAt)).getTime();
         const now = Date.now();
         const expiry = created + (24 * 60 * 60 * 1000); // 24h Standard
         // const expiry = created + (2 * 60 * 1000); // 2min Test
@@ -178,7 +178,7 @@ export default function HistoryPage() {
     const copyLink = (id) => {
         const url = `${window.location.origin}/pay/${id}`;
         navigator.clipboard.writeText(url);
-        addToast('Link Copiado', 'Link de pagamento copiado para a área de transferência.');
+        // Toast removed as per user request
     };
 
     const generatePaymentReceipt = (item) => {
@@ -226,13 +226,13 @@ export default function HistoryPage() {
     };
 
     if (!isConnected) return (
-        <div className="flex h-full items-center justify-center p-8">
+        <section className="flex-1 flex flex-col items-center justify-center p-8 min-h-0 w-full">
             <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto text-2xl">🔌</div>
                 <h2 className="text-xl font-bold text-white">Conecte sua carteira</h2>
                 <p className="text-zinc-500">Para ver seu histórico de transações</p>
             </div>
-        </div>
+        </section>
     );
 
     return (
@@ -380,7 +380,7 @@ export default function HistoryPage() {
                                                     </span>
                                                 )}
                                                 <p className="text-zinc-500 text-xs font-medium">
-                                                    {new Date(item.paidAt || item.createdAt).toLocaleDateString('pt-BR', {
+                                                    {new Date(Number(item.paidAt || item.createdAt)).toLocaleDateString('pt-BR', {
                                                         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                                                     })}
                                                 </p>

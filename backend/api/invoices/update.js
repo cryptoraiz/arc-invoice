@@ -1,4 +1,4 @@
-import { getInvoicesCollection } from '../../lib/mongodb.js';
+// import { getInvoicesCollection } from '../../lib/mongodb.js'; // Removed for Postgres migration
 
 /**
  * PATCH /api/invoices/update

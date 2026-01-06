@@ -60,7 +60,7 @@ export default function PayPage() {
 
                 // Expiration Logic
                 if (data.status !== 'paid') {
-                    const created = new Date(data.createdAt).getTime();
+                    const created = new Date(Number(data.createdAt)).getTime();
                     const now = Date.now();
                     const expiry = created + (24 * 60 * 60 * 1000); // 24h Standard
                     // const expiry = created + (2 * 60 * 1000); // 2min Test
@@ -206,15 +206,51 @@ export default function PayPage() {
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center p-4">
-                <div className="bg-slate-900 border border-red-500/30 p-8 rounded-2xl text-center space-y-4 shadow-2xl max-w-sm w-full">
-                    <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto text-red-500 text-3xl">
-                        ⚠️
+                <div className="relative group max-w-sm w-full">
+                    {/* Background Glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse"></div>
+
+                    {/* Card Content */}
+                    <div className="relative bg-slate-900/90 backdrop-blur-xl border border-red-500/30 p-8 rounded-2xl text-center space-y-6 shadow-2xl">
+
+                        {/* Essential Info - Highlighted */}
+                        <div className="space-y-4">
+                            <div className="relative w-16 h-16 mx-auto bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
+                                <span className="text-3xl text-red-500">⚠️</span>
+                            </div>
+
+                            <h2 className="text-2xl font-black text-white tracking-tight">
+                                Link Indisponível
+                            </h2>
+
+                            <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
+                                <p className="text-red-200 text-sm font-medium">
+                                    {error}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Guidance - Secondary */}
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                            <p className="text-gray-200 text-sm font-medium">
+                                O que fazer agora?
+                            </p>
+                            <p className="text-gray-300 text-xs px-2 leading-relaxed">
+                                Solicite um novo link para quem lhe enviou esta cobrança.
+                            </p>
+                        </div>
+
+                        {/* Intelligent Action - Navigate Home */}
+                        <a
+                            href="/"
+                            className="block w-full px-6 py-3.5 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all flex items-center justify-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            Voltar ao Início
+                        </a>
                     </div>
-                    <h2 className="text-xl font-bold text-white">Link Não Encontrado</h2>
-                    <p className="text-gray-400 text-sm">{error}</p>
-                    <a href="/" className="inline-block px-6 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white transition-colors">
-                        Criar Novo Link
-                    </a>
                 </div>
             </div>
         )
