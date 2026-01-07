@@ -3,9 +3,9 @@
 export default function FAQItem({ question, answer, isOpen, onToggle }) {
   return (
     <div
-      className={`p-4 rounded-xl bg-white/[0.02] border transition-all duration-300 cursor-pointer group ${isOpen
-        ? 'border-blue-500/30 bg-blue-500/5 shadow-[0_0_15px_rgba(59,130,246,0.1)]'
-        : 'border-white/10 hover:border-blue-500/20 hover:bg-white/[0.04]'
+      className={`arc-card-subtle p-4 rounded-xl cursor-pointer group ${isOpen
+        ? 'border-blue-500/30'
+        : 'hover:border-blue-500/40'
         }`}
       onClick={onToggle}
     >

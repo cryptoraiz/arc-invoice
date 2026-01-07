@@ -16,12 +16,12 @@ export const faucetHandler = async (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
         if (!address || !ethers.isAddress(address)) {
-            return res.status(400).json({ error: 'Endereço de wallet inválido.' });
+            return res.status(400).json({ error: 'Invalid wallet address.' });
         }
 
         if (!privateKey) {
             console.error('FAUCET_PRIVATE_KEY not configured');
-            return res.status(500).json({ error: 'Faucet em manutenção (Config Error).' });
+            return res.status(500).json({ error: 'Faucet under maintenance (Config Error).' });
         }
 
         // 0. Verify Turnstile Token (DISABLED)
@@ -31,7 +31,7 @@ export const faucetHandler = async (req, res) => {
         // if (!turnstileSecret) {
         //     console.warn("⚠️ TURNSTILE_SECRET_KEY missing. Skipping captcha check.");
         // } else if (!turnstileToken) {
-        //     return res.status(400).json({ error: 'Captcha inválido. Recarregue a página.' });
+        //     return res.status(400).json({ error: 'Invalid captcha. Reload the page.' });
         // } else {
         //     // Verify with Cloudflare
         //     const formData = new URLSearchParams();
@@ -47,7 +47,7 @@ export const faucetHandler = async (req, res) => {
         //     const outcome = await result.json();
         //     if (!outcome.success) {
         //         console.error("Captcha Failed:", outcome);
-        //         return res.status(400).json({ error: 'Falha na verificação do Captcha.' });
+        //         return res.status(400).json({ error: 'Captcha verification failed.' });
         //     }
         // }
 
@@ -66,7 +66,7 @@ export const faucetHandler = async (req, res) => {
             const nextClaim = lastClaim + (COOLDOWN_HOURS * 60 * 60 * 1000);
             const hoursLeft = Math.ceil((nextClaim - Date.now()) / (1000 * 60 * 60));
             return res.status(429).json({
-                error: `Você já reivindicou recentemente.Tente novamente em ${hoursLeft} horas.`
+                error: `You already claimed recently. Try again in ${hoursLeft} hours.`
             });
         }
 
@@ -107,7 +107,7 @@ export const faucetHandler = async (req, res) => {
         // `ethers.parseEther(FAUCET_AMOUNT)` -> 10^18.
 
         if (balance < amountToSend) {
-            return res.status(503).json({ error: 'Faucet sem fundos no momento. Tente mais tarde.' });
+            return res.status(503).json({ error: 'Faucet out of funds. Try again later.' });
         }
 
         const tx = await wallet.sendTransaction({
@@ -135,7 +135,7 @@ export const faucetHandler = async (req, res) => {
 
     } catch (error) {
         console.error('Faucet Error:', error);
-        res.status(500).json({ error: 'Erro interno ao processar faucet: ' + error.message });
+        res.status(500).json({ error: 'Internal error processing faucet: ' + error.message });
     }
 };
 

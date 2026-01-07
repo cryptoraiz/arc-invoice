@@ -23,7 +23,7 @@ export default function Navbar() {
 
   // Handle network switch
   const handleSwitchNetwork = () => {
-    toast.info('Trocando para Arc Testnet...')
+    toast.info('Switching to Arc Testnet...')
     switchChain({ chainId: arcTestnet.id }).catch(() => attemptRawSwitch())
   }
 
@@ -60,7 +60,7 @@ export default function Navbar() {
       return true
     } catch (rawErr) {
       console.error("Raw Switch falhou:", rawErr)
-      toast.error('Erro ao trocar rede. Tente manualmente.', { duration: 4000 })
+      toast.error('Error switching network. Try manually.', { duration: 4000 })
       return false
     }
   }
@@ -112,19 +112,19 @@ export default function Navbar() {
         if (pollAttempts < maxPollAttempts) {
           setTimeout(pollForChainId, 500)
         } else {
-          console.error('❌ chainId não foi detectado após 5s - possível problema com a carteira')
-          toast.error('Erro ao detectar rede. Tente desconectar e reconectar.')
+          console.error('❌ chainId not detected after 5s - possible wallet issue')
+          toast.error('Error detecting network. Try disconnecting and reconnecting.')
         }
         return
       }
 
       // chainId foi detectado, verificar se precisa trocar
       if (realChainId === arcTestnet.id) {
-        console.log('✅ Já está na Arc Testnet (verificado no provider)')
+        console.log('✅ Already on Arc Testnet (verified in provider)')
         return
       }
 
-      console.log('🚀 chainId diferente detectado, iniciando auto-switch...', {
+      console.log('🚀 Different chainId detected, starting auto-switch...', {
         from: realChainId,
         to: arcTestnet.id
       })
@@ -137,11 +137,11 @@ export default function Navbar() {
       // Verify again before switching
       const realChainId = await getRealChainId()
       if (realChainId === arcTestnet.id) {
-        console.log('✅ Rede já foi alterada')
+        console.log('✅ Network already changed')
         return
       }
 
-      console.log(`🔄 Auto-Switch iniciado - Tentativa ${retryCount + 1}/${maxRetries + 1}`, {
+      console.log(`🔄 Auto-Switch started - Attempt ${retryCount + 1}/${maxRetries + 1}`, {
         currentChain: realChainId,
         targetChain: arcTestnet.id,
         connector: connector?.name
@@ -149,14 +149,14 @@ export default function Navbar() {
 
       try {
         await switchChain({ chainId: arcTestnet.id })
-        console.log('✅ Auto-Switch bem-sucedido!')
+        console.log('✅ Auto-Switch successful!')
         // toast.success('Rede alterada com sucesso!')
       } catch (err) {
-        console.warn(`⚠️ Erro no Auto-Switch (Tentativa ${retryCount + 1}):`, err)
+        console.warn(`⚠️ Auto-Switch Error (Attempt ${retryCount + 1}):`, err)
 
         // Ignora rejeição do usuário
         if (err.code === 4001 || err.message?.includes('rejected')) {
-          console.log('❌ Usuário rejeitou a troca de rede')
+          console.log('❌ User rejected network switch')
           return
         }
 
@@ -165,7 +165,7 @@ export default function Navbar() {
           console.log("🔧 Tentando Fallback Raw Switch...")
           const success = await attemptRawSwitch()
           if (!success) {
-            toast.error('Não foi possível trocar para Arc Testnet. Troque manualmente.', { duration: 5000 })
+            toast.error('Could not switch to Arc Testnet. Please switch manually.', { duration: 5000 })
           }
         } else {
           retryCount++
@@ -222,14 +222,14 @@ export default function Navbar() {
                   className={`text-sm font-medium transition ${isActive('/') ? 'text-white' : 'text-gray-400 hover:text-white'
                     }`}
                 >
-                  Início
+                  Home
                 </Link>
                 <Link
                   to="/como-funciona"
                   className={`text-sm font-medium transition ${isActive('/como-funciona') ? 'text-white' : 'text-gray-400 hover:text-white'
                     }`}
                 >
-                  Como Funciona
+                  How It Works
                 </Link>
                 <Link
                   to="/faq"
@@ -244,9 +244,12 @@ export default function Navbar() {
                     className={`text-sm font-medium transition relative ${isActive('/history') ? 'text-white' : 'text-gray-400 hover:text-white'
                       }`}
                   >
-                    Histórico
+                    History
                     {notificationCount > 0 && (
-                      <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse">
+                      <span
+                        title={`${notificationCount} Pending Invoices`}
+                        className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse border border-slate-900"
+                      >
                         {notificationCount}
                       </span>
                     )}
@@ -291,7 +294,7 @@ export default function Navbar() {
                   onClick={() => setShowWalletModal(true)}
                   className="hidden md:block px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition"
                 >
-                  Conectar Wallet
+                  Connect Wallet
                 </button>
               )}
             </div>

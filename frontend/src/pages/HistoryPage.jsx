@@ -45,7 +45,7 @@ export default function HistoryPage() {
             const backendReceivedItems = backendInvoices.map(inv => ({
                 id: inv.id,
                 creatorAddress: inv.fromWallet,
-                recipientName: inv.recipientName || 'Cobrança Recebida',
+                recipientName: inv.recipientName || 'Payment Received',
                 recipientWallet: inv.recipientWallet,
                 amount: inv.amount,
                 currency: inv.currency,
@@ -68,7 +68,7 @@ export default function HistoryPage() {
                     // Trigger if it wasn't paid before (or is new and paid)
                     // Only if oldItem existed and was NOT paid (avoid notification on first load if refined, but here handles 'just paid')
                     if (oldItem && oldItem.status !== 'paid') {
-                        addToast('Pagamento Recebido! 💰', `Recebeu ${newItem.amount} ${newItem.currency} de ${newItem.recipientName}`);
+                        addToast('Payment Received! 💰', `Received ${newItem.amount} ${newItem.currency} from ${newItem.recipientName}`);
                     }
                 }
             });
@@ -130,8 +130,7 @@ export default function HistoryPage() {
         // const expiry = created + (2 * 60 * 1000); // 2min Test
         const diff = expiry - now;
 
-        if (diff <= 0) return 'Expirado';
-
+        if (diff <= 0) return 'Expired';
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         return `${hours}h ${minutes}m`;
@@ -186,18 +185,18 @@ export default function HistoryPage() {
         // console.log("Generating receipt for:", item);
         import('../utils/generateReceipt').then(module => {
             module.generatePaymentReceipt(item);
-            addToast('Comprovante Gerado', `Comprovante para ${item.recipientName} está pronto.`);
+            addToast('Receipt Generated', `Receipt for ${item.recipientName} is ready.`);
         });
     };
 
     const handleExportData = () => {
         const allItems = [...receivedLinks, ...sentPayments];
         if (allItems.length === 0) {
-            addToast('Nada para exportar', 'Seu histórico está vazio.');
+            addToast('Nothing to export', 'Your history is empty.');
             return;
         }
         generateBatchReceipts(allItems, address);
-        addToast('Backup Iniciado', 'Download do PDF completo iniciado.');
+        addToast('Backup Started', 'Full PDF download started.');
     };
 
     const handleClearData = async () => {
@@ -211,7 +210,7 @@ export default function HistoryPage() {
                 await invoiceAPI.deleteByWallet(address);
             }
 
-            addToast('Histórico Limpo', 'Todos os dados foram excluídos.');
+            addToast('History Cleared', 'All data has been deleted.');
 
             setTimeout(() => {
                 setShowClearModal(false);
@@ -220,7 +219,7 @@ export default function HistoryPage() {
 
         } catch (error) {
             console.error('Error clearing history:', error);
-            addToast('Erro', 'Falha ao limpar histórico do servidor.');
+            addToast('Error', 'Failed to clear server history.');
             setShowClearModal(false);
         }
     };
@@ -229,8 +228,8 @@ export default function HistoryPage() {
         <section className="flex-1 flex flex-col items-center justify-center p-8 min-h-0 w-full">
             <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto text-2xl">🔌</div>
-                <h2 className="text-xl font-bold text-white">Conecte sua carteira</h2>
-                <p className="text-zinc-500">Para ver seu histórico de transações</p>
+                <h2 className="text-xl font-bold text-white">Connect your wallet</h2>
+                <p className="text-zinc-500">To view your transaction history</p>
             </div>
         </section>
     );
@@ -246,18 +245,18 @@ export default function HistoryPage() {
                     <div className="space-y-4">
                         {/* Row 1 - Monetary Values Only */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white/[0.02] border border-white/5 p-5 rounded-2xl flex items-center justify-between">
+                            <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-zinc-400 mb-1">Total Recebido</p>
+                                    <p className="text-sm font-medium text-zinc-400 mb-1">Total Received</p>
                                     <p className="text-2xl font-bold text-white tracking-tight">${formattedTotalReceived}</p>
                                 </div>
                                 <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 </div>
                             </div>
-                            <div className="bg-white/[0.02] border border-white/5 p-5 rounded-2xl flex items-center justify-between">
+                            <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-zinc-400 mb-1">Total Enviado</p>
+                                    <p className="text-sm font-medium text-zinc-400 mb-1">Total Sent</p>
                                     <p className="text-2xl font-bold text-white tracking-tight">${formattedTotalSent}</p>
                                 </div>
                                 <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
@@ -271,11 +270,11 @@ export default function HistoryPage() {
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         {/* Tabs */}
                         <div className="flex gap-2 bg-white/[0.02] p-1 rounded-xl border border-white/5">
-                            {['Todos', 'Recebidos', 'Pendentes', 'Enviados'].map((tabLabel) => {
-                                const key = tabLabel === 'Todos' ? 'all' :
-                                    tabLabel === 'Recebidos' ? 'received' :
-                                        tabLabel === 'Pendentes' ? 'pending' :
-                                            tabLabel === 'Expirados' ? 'expired' : 'sent';
+                            {['All', 'Received', 'Pending', 'Sent'].map((tabLabel) => {
+                                const key = tabLabel === 'All' ? 'all' :
+                                    tabLabel === 'Received' ? 'received' :
+                                        tabLabel === 'Pending' ? 'pending' :
+                                            tabLabel === 'Expired' ? 'expired' : 'sent';
                                 const isActive = activeTab === key;
                                 return (
                                     <button
@@ -310,7 +309,7 @@ export default function HistoryPage() {
                                     disabled={currentPage === 1}
                                     className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-xs"
                                 >
-                                    Anterior
+                                    Previous
                                 </button>
                                 <span className="text-zinc-500 text-xs font-medium">
                                     {currentPage} / {totalPages}
@@ -320,7 +319,7 @@ export default function HistoryPage() {
                                     disabled={currentPage === totalPages}
                                     className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-xs"
                                 >
-                                    Próximo
+                                    Next
                                 </button>
                             </div>
                         </div>
@@ -331,12 +330,12 @@ export default function HistoryPage() {
                             <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center">
                                 <svg className="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                             </div>
-                            <p className="text-sm font-medium">Nenhum registro encontrado</p>
+                            <p className="text-sm font-medium">No history found</p>
                         </div>
                     ) : (
                         <div className="grid gap-3">
                             {paginatedItems.map(item => (
-                                <div key={item.id} className="group bg-white/[0.02] border border-white/5 rounded-xl p-4 transition-all hover:bg-white/[0.04] hover:border-white/10">
+                                <div key={item.id} className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-xl p-4">
                                     <div className="flex items-center justify-between gap-4">
 
                                         {/* Left Icon */}
@@ -365,10 +364,10 @@ export default function HistoryPage() {
                                                         (item.status === 'pending' && isExpired(item)) ? 'bg-zinc-800 text-zinc-400' :
                                                             'bg-amber-500/10 text-amber-500'
                                                     }`}>
-                                                    {item.type === 'sent' ? 'Enviado' :
-                                                        item.status === 'paid' ? 'Recebido' :
-                                                            (item.status === 'pending' && isExpired(item)) ? 'Expirado' :
-                                                                'Aguardando'}
+                                                    {item.type === 'sent' ? 'Sent' :
+                                                        item.status === 'paid' ? 'Received' :
+                                                            (item.status === 'pending' && isExpired(item)) ? 'Expired' :
+                                                                'Pending'}
                                                 </span>
                                             </div>
 
@@ -376,7 +375,7 @@ export default function HistoryPage() {
                                                 {item.status === 'pending' && !isExpired(item) && (
                                                     <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
                                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        Expira em: {getTimeRemaining(item.createdAt)}
+                                                        Expires in: {getTimeRemaining(item.createdAt)}
                                                     </span>
                                                 )}
                                                 <p className="text-zinc-500 text-xs font-medium">
@@ -394,7 +393,7 @@ export default function HistoryPage() {
                                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-colors text-xs font-bold"
                                                     >
                                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2v1h-4V5z" /></svg>
-                                                        Copiar Link
+                                                        Copy Link
                                                     </button>
                                                 )}
 
@@ -404,7 +403,7 @@ export default function HistoryPage() {
                                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors text-xs font-bold"
                                                     >
                                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                                        Comprovante
+                                                        Receipt
                                                     </button>
                                                 )}
 
@@ -444,17 +443,17 @@ export default function HistoryPage() {
                                 disabled={currentPage === 1}
                                 className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
                             >
-                                Anterior
+                                Previous
                             </button>
                             <span className="text-zinc-400 text-sm font-medium">
-                                Página {currentPage} de {totalPages}
+                                Page {currentPage} of {totalPages}
                             </span>
                             <button
                                 onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
                                 className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
                             >
-                                Próximo
+                                Next
                             </button>
                         </div>
                     )}
@@ -476,7 +475,7 @@ export default function HistoryPage() {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            LIMPAR DADOS
+                            CLEAR DATA
                         </button>
                     </div>
                 </div>
@@ -531,10 +530,10 @@ export default function HistoryPage() {
                                 </div>
 
                                 <div>
-                                    <h3 className="text-xl font-bold text-white mb-2">Limpar Histórico?</h3>
+                                    <h3 className="text-xl font-bold text-white mb-2">Clear History?</h3>
                                     <p className="text-sm text-zinc-400 leading-relaxed">
-                                        Você perderá todo o histórico de transações e comprovantes salvos neste dispositivo.
-                                        <br /><span className="text-red-400 font-bold">Essa ação é irreversível.</span>
+                                        You will lose all transaction history and saved receipts on this device.
+                                        <br /><span className="text-red-400 font-bold">This action cannot be undone.</span>
                                     </p>
                                 </div>
 
@@ -544,7 +543,7 @@ export default function HistoryPage() {
                                         className="w-full py-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-bold text-sm border border-blue-500/20 flex items-center justify-center gap-2"
                                     >
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        Baixar Backup (PDF Completo)
+                                        Download Backup (Full PDF)
                                     </button>
 
                                     <div className="flex gap-3 w-full">
@@ -552,13 +551,13 @@ export default function HistoryPage() {
                                             onClick={() => setShowClearModal(false)}
                                             className="flex-1 py-3 rounded-xl bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-sm"
                                         >
-                                            Cancelar
+                                            Cancel
                                         </button>
                                         <button
                                             onClick={handleClearData}
                                             className="flex-1 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold text-sm shadow-lg shadow-red-500/20"
                                         >
-                                            Excluir Tudo
+                                            Delete All
                                         </button>
                                     </div>
                                 </div>

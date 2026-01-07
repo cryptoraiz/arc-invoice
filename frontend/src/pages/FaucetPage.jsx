@@ -119,7 +119,7 @@ export default function FaucetPage() {
             }
 
             setTxHash(data.txHash);
-            toast.success("50 USDC enviados! 🎉");
+            toast.success("50 USDC sent! 🎉");
             fetchStats(); // Update immediately
             setShowShareModal(true);
 
@@ -132,7 +132,7 @@ export default function FaucetPage() {
         }
     }
 
-    const shareText = `Acabei de receber 50 USDC na Arc Testnet usando o Faucet da Arc Invoice! 🚀\n\nAbasteça sua carteira agora:\nhttps://arcinvoice.xyz/faucet\n\n#ArcNetwork #DeFi #Web3`
+    const shareText = `Just claimed 50 USDC on Arc Testnet via Arc Invoice Faucet! 🚀\n\nFuel your wallet now:\nhttps://arcinvoice.xyz/faucet\n\n#ArcNetwork #DeFi #Web3`
     const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
     return (
@@ -158,43 +158,41 @@ export default function FaucetPage() {
                             50 USDC
                         </h1>
                         <h2 className="text-2xl lg:text-3xl font-bold text-white">
-                            Completamente Grátis
+                            Completely Free
                         </h2>
                     </div>
 
                     {/* Description */}
                     <p className="text-base lg:text-lg text-gray-400 mx-auto leading-relaxed">
-                        Faça claim agora mesmo e tenha combustível para testar a <span className="whitespace-nowrap">Arc Network</span>.
+                        Claim now and get fuel to test on <span className="whitespace-nowrap">Arc Network</span>.
                     </p>
                 </div>
 
                 {/* Stats Cards - WITH REQUESTED GLASS/SHIMMER EFFECT */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="glass-card p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[100px] shimmer">
+                    <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[100px]">
                         <div className="text-3xl font-black gradient-text mb-1">
-                            {stats.claims.toLocaleString('pt-BR')}
+                            {stats.claims.toLocaleString('en-US')}
                         </div>
-                        <div className="text-xs text-zinc-400 font-medium">Claims Realizados</div>
+                        <div className="text-xs text-zinc-400 font-medium">Claims Made</div>
                     </div>
-                    <div className="glass-card p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[100px] shimmer">
+                    <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[100px]">
                         <div className="text-3xl font-black text-cyan-400 mb-1">
-                            ${stats.totalDistributed.toLocaleString('pt-BR')}
+                            ${stats.totalDistributed.toLocaleString('en-US')}
                         </div>
-                        <div className="text-xs text-zinc-400 font-medium">USDC Distribuídos</div>
+                        <div className="text-xs text-zinc-400 font-medium">USDC Distributed</div>
                     </div>
-                    <div className="glass-card p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[100px] shimmer">
+                    <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 p-4 rounded-xl text-center flex flex-col items-center justify-center min-h-[100px]">
                         <div className="text-3xl font-black text-purple-400 mb-1">
-                            {stats.uniqueWallets.toLocaleString('pt-BR')}
+                            {stats.uniqueWallets.toLocaleString('en-US')}
                         </div>
-                        <div className="text-xs text-zinc-400 font-medium">Wallets Únicas</div>
+                        <div className="text-xs text-zinc-400 font-medium">Unique Wallets</div>
                     </div>
                 </div>
 
                 {/* Claim Card - Clean style (Reverted) */}
                 <div className="relative">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-3xl blur-xl"></div>
-
-                    <div className="relative bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 space-y-5">
+                    <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 space-y-5">
 
                         {/* Claim Button */}
                         {!isConnected ? (
@@ -205,7 +203,7 @@ export default function FaucetPage() {
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
-                                Conectar Wallet para Receber
+                                Connect Wallet to Claim
                             </button>
                         ) : (
                             <div className="space-y-4">
@@ -229,7 +227,7 @@ export default function FaucetPage() {
                                     {isLoading ? (
                                         <>
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                            Processando...
+                                            Processing...
                                         </>
                                     ) : errorMsg ? (
                                         <>
@@ -239,7 +237,7 @@ export default function FaucetPage() {
                                     ) : (
                                         <>
                                             <span className="text-xl">⚡</span>
-                                            Resgatar 50 USDC
+                                            Claim 50 USDC
                                             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                             </svg>
@@ -251,7 +249,7 @@ export default function FaucetPage() {
                                     <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                     </svg>
-                                    Limite: <span className="text-blue-400 font-medium">1 resgate a cada 24 horas</span>
+                                    Limit: <span className="text-blue-400 font-medium">1 claim every 24 hours</span>
                                 </div>
                             </div>
                         )}
@@ -281,9 +279,9 @@ export default function FaucetPage() {
                                 <span className="text-3xl">🎉</span>
                             </div>
 
-                            <h3 className="text-xl font-bold text-white">50 USDC Enviados!</h3>
+                            <h3 className="text-xl font-bold text-white">50 USDC Sent!</h3>
                             <p className="text-sm text-gray-400">
-                                Os tokens foram enviados para sua carteira. Compartilhe com amigos!
+                                Tokens have been sent to your wallet. Share with friends!
                             </p>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -294,27 +292,27 @@ export default function FaucetPage() {
                                     className="p-3 rounded-xl bg-[#1DA1F2] hover:bg-[#1a91da] text-white font-bold flex items-center justify-center gap-2 transition-all text-sm shadow-[0_0_20px_rgba(29,161,242,0.4)] hover:shadow-[0_0_30px_rgba(29,161,242,0.6)] hover:-translate-y-1"
                                 >
                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" /></svg>
-                                    Compartilhar no Twitter
+                                    Share on Twitter
                                 </a>
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(shareText);
-                                        toast.success("Texto copiado!");
+                                        toast.success("Text copied!");
                                     }}
                                     className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold flex items-center justify-center gap-2 transition-colors text-sm"
                                 >
-                                    Copiar
+                                    Copy
                                 </button>
                             </div>
 
                             {txHash && (
                                 <a
-                                    href={`https://testnet.arcscan.app/tx/${txHash}`}
+                                    href={`https://explorer.testnet.arc.network/tx/${txHash}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block text-xs text-blue-400 hover:text-blue-300 underline mt-2"
                                 >
-                                    Ver transação no Explorer
+                                    View on Explorer
                                 </a>
                             )}
                         </div>

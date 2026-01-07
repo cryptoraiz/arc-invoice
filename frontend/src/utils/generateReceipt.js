@@ -59,7 +59,7 @@ const drawReceiptOnDoc = (doc, paymentData) => {
 
     // === STATUS PILL ===
     // Center the pill in the header area or below logo? Let's put it on the right side under ID
-    const statusText = paymentData.status === 'paid' ? 'CONFIRMADO' : 'PENDENTE';
+    const statusText = paymentData.status === 'paid' ? 'CONFIRMED' : 'PENDING';
     const pillColor = paymentData.status === 'paid' ? COLORS.success : [234, 179, 8]; // Green or Yellow
 
     doc.setFillColor(...pillColor);
@@ -125,13 +125,13 @@ const drawReceiptOnDoc = (doc, paymentData) => {
     };
 
     // Sender
-    y = drawField('De (Pagador)', paymentData.payer || 'Desconhecido', 6, true);
+    y = drawField('From (Payer)', paymentData.payer || 'Unknown', 6, true);
 
     // Recipient
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.text.muted);
-    doc.text('PARA (Destinatário)', 20, y);
+    doc.text('TO (Recipient)', 20, y);
 
     doc.setFont('helvetica', 'bold'); // Name Bold
     doc.setFontSize(11);
@@ -227,16 +227,16 @@ export const generateBatchReceipts = (paymentsArray, walletAddress) => {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(36);
-    doc.text('Relatório Completo', 105, 120, { align: 'center' });
+    doc.text('Complete Report', 105, 120, { align: 'center' });
 
     doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(148, 163, 184);
     doc.text(`Carteira: ${walletAddress}`, 105, 135, { align: 'center' });
-    doc.text(`${paymentsArray.length} Transações Registradas`, 105, 145, { align: 'center' });
+    doc.text(`${paymentsArray.length} Recorded Transactions`, 105, 145, { align: 'center' });
 
     doc.setFontSize(10);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 105, 270, { align: 'center' });
+    doc.text(`Generated at: ${new Date().toLocaleString('en-US')}`, 105, 270, { align: 'center' });
 
     // PAGES
     paymentsArray.forEach((item) => {

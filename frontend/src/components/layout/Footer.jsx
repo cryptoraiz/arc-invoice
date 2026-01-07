@@ -22,14 +22,14 @@ export default function Footer() {
             <Link to="/" className="flex items-center gap-4 group w-fit">
               <div className="flex flex-col">
                 <span className="font-bold text-3xl tracking-tight leading-none gradient-text">
-                  Canais Oficiais
+                  Official Channels
                 </span>
                 <div className="flex items-center gap-1.5 ml-0.5 mt-0.5">
                   <span className="text-amber-500 animate-pulse">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                   </span>
                   <span className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">
-                    Em Construção
+                    Under Construction
                   </span>
                 </div>
               </div>
@@ -51,7 +51,7 @@ export default function Footer() {
 
               <div className="h-8 flex items-center border-l border-white/10 pl-4">
                 <p className="text-[10px] text-gray-500">
-                  © 2025 Arc Invoice. Construído na <a href="#" className="hover:text-blue-400 transition-colors">Arc Network</a>.
+                  © 2025 Arc Invoice. Built on <a href="#" className="hover:text-blue-400 transition-colors">Arc Network</a>.
                 </p>
               </div>
             </div>

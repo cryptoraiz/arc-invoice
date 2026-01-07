@@ -122,20 +122,20 @@ export default function PaymentForm() {
       <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem] overflow-hidden"
         style={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.15), transparent 40%)`
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.05), transparent 40%)`
         }}
       />
 
       {/* Card */}
-      <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-blue-500/20 rounded-[2rem] p-6 md:p-8 shadow-[0_0_40px_rgba(37,99,235,0.15)] overflow-hidden transition-all duration-300 group-hover:border-blue-500/40 group-hover:shadow-[0_0_60px_rgba(37,99,235,0.25)]">
+      <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden">
 
         {/* Header - Muda dinamicamente */}
         <div className="flex items-start gap-3 mb-6 transition-all duration-300">
           <span className="text-2xl">{generatedLink ? '✨' : '💎'}</span>
           <div>
-            <h2 className="text-xl font-bold">{generatedLink ? 'Cobrança Criada!' : 'Nova Cobrança'}</h2>
+            <h2 className="text-xl font-bold">{generatedLink ? 'Invoice Created!' : 'New Invoice'}</h2>
             <p className="text-sm text-gray-400">
-              {generatedLink ? 'Link de pagamento pronto para envio.' : 'Configure os detalhes do pagamento'}
+              {generatedLink ? 'Payment link ready to share.' : 'Configure payment details'}
             </p>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function PaymentForm() {
                 required
               />
               <label htmlFor="name" className="label-float top-1/2 -translate-y-1/2 text-xs">
-                Nome ou Empresa
+                Name or Business
               </label>
             </div>
 
@@ -167,17 +167,17 @@ export default function PaymentForm() {
                   type="text"
                   className={`input-float pl-10 py-3 text-sm bg-white/5 text-gray-400 
                     ${!isConnected
-                      ? 'cursor-help placeholder:text-gray-500 hover:placeholder:text-cyan-300 hover:placeholder:drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] hover:placeholder:shadow-black placeholder:transition-all placeholder:duration-300'
+                      ? 'cursor-help placeholder:text-gray-500 hover:placeholder:text-cyan-300 hover:placeholder:drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] hover:placeholder:shadow-black placeholder:transition-all placeholder:transition-duration-300'
                       : 'cursor-not-allowed'
                     }`}
-                  placeholder={!isConnected ? "Conecte sua carteira para preencher..." : " "}
+                  placeholder={!isConnected ? "Connect wallet to auto-fill..." : " "}
                   id="wallet"
                   value={formData.wallet}
                   readOnly
                 />
                 {isConnected && (
                   <label htmlFor="wallet" className="label-float top-1/2 -translate-y-1/2 text-xs" style={{ left: '40px' }}>
-                    Sua Wallet (Automático)
+                    Your Wallet (Auto)
                   </label>
                 )}
               </div>
@@ -185,8 +185,8 @@ export default function PaymentForm() {
               {/* Mensagem de Erro/Validação */}
               {formData.wallet && !/^0x[a-fA-F0-9]{40}$/.test(formData.wallet) && (
                 <div className="absolute -bottom-5 left-0 text-xs text-red-400 font-medium ml-4 flex items-center gap-1">
-                  <span>⚠️ Endereço inválido</span>
-                  <span>({formData.wallet.length}/42 caracteres)</span>
+                  <span>⚠️ Invalid Address</span>
+                  <span>({formData.wallet.length}/42 chars)</span>
                 </div>
               )}
             </div>
@@ -202,8 +202,8 @@ export default function PaymentForm() {
                   <input
                     type="text"
                     inputMode="numeric"
-                    className="input-float pl-8 text-xl font-bold"
-                    placeholder="0,00"
+                    className="input-float pl-8 text-xl tabular-nums font-bold placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-gray-500"
+                    placeholder="Enter amount"
                     id="amount"
                     style={{ padding: '14px 12px 14px 32px', height: '52px' }}
                     value={formData.amount}
@@ -214,7 +214,8 @@ export default function PaymentForm() {
                         return;
                       }
                       const numberValue = parseInt(value, 10) / 100;
-                      const formatted = numberValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                      // Using en-US for dot decimal
+                      const formatted = numberValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                       setFormData({ ...formData, amount: formatted });
                     }}
                     required
@@ -235,7 +236,7 @@ export default function PaymentForm() {
             {/* Taxa Info */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
               <span className="text-green-400 font-bold text-sm">✓</span>
-              <span className="text-sm text-green-400">Taxa &lt; $0.01 • Instantâneo</span>
+              <span className="text-sm text-green-400">Fee &lt; $0.01 • Instant</span>
             </div>
 
             {/* Descrição */}
@@ -249,7 +250,7 @@ export default function PaymentForm() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               ></textarea>
               <label htmlFor="description" className="label-float top-3 text-xs">
-                Descrição (opcional)
+                Description (optional)
               </label>
             </div>
 
@@ -271,11 +272,11 @@ export default function PaymentForm() {
               {isConnected ? (
                 <>
                   <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_3s_infinite]"></span>
-                  Gerar Cobrança →
+                  Create Invoice →
                 </>
               ) : (
                 <>
-                  Conectar Wallet
+                  Connect Wallet
                 </>
               )}
             </button>
@@ -291,18 +292,18 @@ export default function PaymentForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">Link de Pagamento</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">Payment Link</p>
                   <div className="flex items-center gap-2 bg-black/40 rounded-lg p-2 border border-white/5">
                     <span className="flex-1 text-sm text-cyan-400 font-mono truncate">{generatedLink}</span>
                     <button
                       onClick={copyToClipboard}
                       className="p-2 hover:bg-white/10 rounded-md transition-colors text-white relative group/copy"
-                      title={isCopied ? "Copiado!" : "Copiar"}
+                      title={isCopied ? "Copied!" : "Copy"}
                     >
                       {isCopied ? '✅' : '📋'}
                       {/* Tooltip inline */}
                       <span className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-1 rounded transition-opacity whitespace-nowrap ${isCopied ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                        Copiado!
+                        Copied!
                       </span>
                     </button>
                   </div>
@@ -313,7 +314,7 @@ export default function PaymentForm() {
             {/* Share Options - Order: Whatsapp > Telegram > Gmail */}
             <div className="grid grid-cols-3 gap-3">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Pagamento via Arc Invoice: ${generatedLink}`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`Arc Invoice Payment Link: ${generatedLink}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-[#25D366]/5 border border-[#25D366]/20 hover:bg-[#25D366]/10 hover:scale-105 transition-all group/icon"
@@ -325,7 +326,7 @@ export default function PaymentForm() {
               </a >
 
               <a
-                href={`https://t.me/share/url?url=${encodeURIComponent(generatedLink)}&text=${encodeURIComponent('Pagamento via Arc Invoice')}`}
+                href={`https://t.me/share/url?url=${encodeURIComponent(generatedLink)}&text=${encodeURIComponent('Arc Invoice Payment')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-[#0088cc]/5 border border-[#0088cc]/20 hover:bg-[#0088cc]/10 hover:scale-105 transition-all group/icon"
@@ -337,7 +338,7 @@ export default function PaymentForm() {
               </a>
 
               <a
-                href={`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent('Pagamento via Arc Invoice')}&body=${encodeURIComponent(`Segue o link para pagamento via Arc Invoice: ${generatedLink}`)}`}
+                href={`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent('Arc Invoice Receipt')}&body=${encodeURIComponent(`Here is your payment link via Arc Invoice: ${generatedLink}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-red-500/5 border border-red-500/20 hover:bg-red-500/10 hover:scale-105 transition-all group/icon"
@@ -361,10 +362,10 @@ export default function PaymentForm() {
                 })
                 setGeneratedLink('')
               }}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group shadow-lg"
+              className="w-full py-4 rounded-xl gradient-button text-white font-bold hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group shadow-lg"
             >
               <span className="text-xl">+</span>
-              <span className="group-hover:translate-x-1 transition-transform">Nova Cobrança</span>
+              <span className="group-hover:translate-x-1 transition-transform">New Invoice</span>
             </button>
           </div>
         )}

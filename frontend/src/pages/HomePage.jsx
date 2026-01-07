@@ -19,13 +19,13 @@ export default function HomePage() {
           {/* Título */}
           <div className="space-y-1 min-w-[300px]"> {/* min-w evita que o texto quebre feio durante a redução de largura */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-none">
-              Receba pagamentos
-              <span className="block">instantâneos</span>
-              <span className="gradient-text block mt-1">em USDC & EURC</span>
+              Receive instant
+              <span className="block">payments</span>
+              <span className="gradient-text block mt-1">in USDC & EURC</span>
             </h1>
 
             <p className="text-base md:text-lg max-h-[800px]:text-base text-gray-400 leading-relaxed lg:max-w-lg transition-all">
-              Crie links de pagamento profissionais em segundos. Sem taxas ocultas, sem intermediários. Confirmação em menos de 1 segundo.
+              Create professional payment links in seconds. No hidden fees, no intermediaries. Confirmation in less than 1 second.
             </p>
           </div>
 
@@ -33,7 +33,7 @@ export default function HomePage() {
           <div className="flex flex-wrap gap-2 min-w-[300px]">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
               <span className="text-lg">⚡</span>
-              <span className="text-sm font-medium">Instantâneo</span>
+              <span className="text-sm font-medium">Instant</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
               <span className="text-lg">🛡️</span>

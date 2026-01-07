@@ -1,47 +1,62 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import FAQItem from '../components/ui/FAQItem'
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState(null)
+  const faqContainerRef = useRef(null)
 
   const faqs = [
     {
-      question: 'O que é USDC/EURC?',
-      answer: 'Stablecoins (moedas estáveis) emitidas pela Circle. 1 USDC = $1 USD e 1 EURC = €1 EUR. Mantêm valor estável 1:1 com moedas tradicionais.'
+      question: 'What is USDC/EURC?',
+      answer: 'Stablecoins issued by Circle. 1 USDC = $1 USD and 1 EURC = €1 EUR. They maintain a stable 1:1 value with traditional currencies.'
     },
     {
-      question: 'Quanto custa usar o Arc Invoice?',
-      answer: 'Grátis para criar links! Você paga apenas a taxa de rede da Arc: ~$0.01 USDC (um décimo de centavo) por transação. Sem mensalidades ou taxas escondidas.'
+      question: 'How much does Arc Invoice cost?',
+      answer: 'Free to create links! You only pay the Arc network fee: ~$0.01 USDC (one tenth of a cent) per transaction. No monthly fees or hidden charges.'
     },
     {
-      question: 'Preciso de uma wallet cripto?',
-      answer: 'Sim, você precisa de uma wallet Web3 compatível com Arc Network (ex: MetaMask, Rabby, Coinbase Wallet) para receber os pagamentos.'
+      question: 'Do I need a crypto wallet?',
+      answer: 'Yes, you need a Web3 wallet compatible with Arc Network (e.g., MetaMask, Rabby, Coinbase Wallet) to receive payments.'
     },
     {
-      question: 'Como meu cliente paga?',
-      answer: 'O cliente pode pagar de 2 formas:\n\n• Desktop: Clica no link e conecta sua wallet (MetaMask, Rabby, etc)\n\n• Mobile: Escaneia o QR Code com app de carteira mobile\n\nConfirmação instantânea em ambos os casos!'
+      question: 'How does my client pay?',
+      answer: 'The client can pay in 2 ways:\n\n• Desktop: Clicks the link and connects their wallet (MetaMask, Rabby, etc)\n\n• Mobile: Scans the QR Code with a mobile wallet app\n\nInstant confirmation in both cases!'
     },
     {
-      question: 'É seguro?',
-      answer: 'Totalmente! Transações verificadas on-chain na Arc Network. Você tem controle total dos seus fundos. Sem intermediários, sem custódia.'
+      question: 'Is it safe?',
+      answer: 'Absolutely! Transactions are verified on-chain on the Arc Network. You have full control of your funds. No intermediaries, no custody.'
     },
     {
-      question: 'Os links de pagamento expiram?',
-      answer: 'Sim! Por segurança, cada link expira em 24 horas após criação. Você pode criar novos links a qualquer momento, de forma grátis e instantânea.'
+      question: 'Do payment links expire?',
+      answer: 'Yes! For security, each link expires 24 hours after creation. You can create new links at any time, for free and instantly.'
     },
     {
-      question: 'Onde vejo meu histórico?',
-      answer: 'Na aba "Histórico" você vê todos os links criados, pagamentos recebidos e enviados. Pode baixar comprovantes em PDF e limpar dados quando quiser.'
+      question: 'Where do I see my history?',
+      answer: 'In the "History" tab, you see all created links, received and sent payments. You can download PDF receipts and clear data whenever you want.'
     },
     {
-      question: 'Quanto tempo leva?',
-      answer: 'Criar o link: ~5 segundos. Pagamento confirmado: < 1 segundo após o cliente aprovar. É instantâneo!'
+      question: 'How long does it take?',
+      answer: 'Create link: ~5 seconds. Payment confirmed: < 1 second after client approval. It is instant!'
     },
     {
-      question: 'Tem limite de valor?',
-      answer: 'Não há limite mínimo ou máximo imposto pelo Arc Invoice. Os limites dependem apenas da sua wallet e saldo do cliente.'
+      question: 'Is there a value limit?',
+      answer: 'There is no minimum or maximum limit imposed by Arc Invoice. Limits depend only on your wallet and client balance.'
     }
   ]
+
+  // Close FAQ when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (faqContainerRef.current && !faqContainerRef.current.contains(event.target) && openIndex !== null) {
+        setOpenIndex(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openIndex])
 
   return (
     <section className="flex-1 flex items-center justify-center p-4 md:p-6 h-full min-h-0">
@@ -50,12 +65,13 @@ export default function FAQPage() {
         <div className="relative text-center space-y-2 opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]">
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-blue-500/20 rounded-full blur-[50px] pointer-events-none"></div>
           <h1 className="relative text-3xl md:text-4xl font-black">
-            Dúvidas? <span className="gradient-text">Respondemos aqui</span>
+            Questions? <span className="gradient-text">We answer here</span>
           </h1>
         </div>
 
         {/* FAQs em Coluna Única */}
         <div
+          ref={faqContainerRef}
           className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent opacity-0 animate-[slideDown_0.5s_ease-out_0.2s_forwards] space-y-4 max-w-3xl mx-auto w-full"
           style={{ animationFillMode: 'forwards' }}
         >
@@ -73,7 +89,7 @@ export default function FAQPage() {
         {/* Call to Action Compacto */}
         <div className="text-center py-3 border-t border-white/5 opacity-0 animate-[fadeIn_0.5s_ease-out_0.4s_forwards]" style={{ animationFillMode: 'forwards' }}>
           <p className="text-xs text-gray-400">
-            Ainda tem dúvidas? Fale conosco pelos canais oficiais.
+            Still have questions? Contact us via official channels.
           </p>
         </div>
       </div>

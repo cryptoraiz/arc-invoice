@@ -1,31 +1,31 @@
-# 🚀 Guia de Deploy em VPS (Arc Invoice)
+# 🚀 VPS Deployment Guide (Arc Invoice)
 
-Este guia cobre o processo profissional de colocar o **Arc Invoice** no ar usando uma VPS paga (Virtual Private Server) e seu domínio `arcinvoice.xyz`.
-
----
-
-## 🔄 O Fluxo Correto (GitHub vs. Deploy)
-
-> **Dúvida:** *"Não é melhor fazer deploy antes e depois jogar no GitHub?"*
-
-**Resposta:** Não. O fluxo profissional é **PC Local** ➔ **GitHub** ➔ **VPS (Servidor)**.
-
-1.  **Segurança:** O GitHub é seu "cofre". Se seu PC queimar, o código está salvo.
-2.  **Sincronia:** A VPS "puxa" o código do GitHub. Você não sobe arquivos do seu PC direto para o servidor (isso é inseguro e difícil de manter).
-3.  **Deploy Contínuo:** No futuro, cada vez que você der `git push`, o servidor pode atualizar sozinho.
+This guide covers the professional process of deploying **Arc Invoice** live using a paid VPS (Virtual Private Server) and your domain `arcinvoice.xyz`.
 
 ---
 
-## 1️⃣ Criando o Repositório GitHub
+## 🔄 The Correct Workflow (GitHub vs. Deploy)
 
-Já que seu usuário é `cryptoraiz`:
+> **Question:** *"Isn't it better to deploy first and then upload to GitHub?"*
 
-1.  Acesse [github.com/new](https://github.com/new).
-2.  **Repository name:** `arc-invoice` (Importante manter o nome que definimos no projeto).
-3.  **Public/Private:** Escolha *Public* (mais fácil para deploy) ou *Private* (precisa configurar chaves SSH).
-4.  **Não marque** "Add a README" ou .gitignore (nós já criamos isso no seu PC).
-5.  Clique em **Create repository**.
-6.  Copie os comandos que aparecem na tela (seção "...or push an existing repository"). Serão parecidos com:
+**Answer:** No. The professional workflow is **Local PC** ➔ **GitHub** ➔ **VPS (Server)**.
+
+1.  **Security:** GitHub is your "safe". If your PC breaks, the code is saved.
+2.  **Sync:** The VPS "pulls" the code from GitHub. You don't upload files from your PC directly to the server (this is insecure and hard to maintain).
+3.  **Continuous Deploy:** In the future, every time you `git push`, the server can update itself.
+
+---
+
+## 1️⃣ Creating the GitHub Repository
+
+Since your user is `cryptoraiz`:
+
+1.  Access [github.com/new](https://github.com/new).
+2.  **Repository name:** `arc-invoice` (Important to keep the name we defined in the project).
+3.  **Public/Private:** Choose *Public* (easier for deployment) or *Private* (needs SSH key configuration).
+4.  **Do not check** "Add a README" or .gitignore (we already created this on your PC).
+5.  Click on **Create repository**.
+6.  Copy the commands that appear on the screen (section "...or push an existing repository"). They will look something like this:
 
 ```bash
 git remote add origin https://github.com/cryptoraiz/arc-invoice.git
@@ -34,44 +34,44 @@ git push -u origin master
 
 ---
 
-## 2️⃣ Preparando a VPS (Máquina Virtual)
+## 2️⃣ Preparing the VPS (Virtual Machine)
 
-Recomendação de VPS: **DigitalOcean (Droplet)**, **Vultr**, **Hetzner** ou **AWS Lightsail**.
-*Sistema Operacional:* **Ubuntu 22.04 LTS** (Padrão de mercado).
+VPS Recommendation: **DigitalOcean (Droplet)**, **Vultr**, **Hetzner**, or **AWS Lightsail**.
+*Operating System:* **Ubuntu 22.04 LTS** (Market Standard).
 
-### A. Acesso SSH
-Acesse seu terminal (no Windows use o PowerShell ou Terminal):
+### A. SSH Access
+Access your terminal (on Windows use PowerShell or Terminal):
 ```bash
-ssh root@SEU_IP_DA_VPS
-# Digite a senha que a provedora te enviou
+ssh root@YOUR_VPS_IP
+# Enter the password the provider sent you
 ```
 
-### B. Instalação Básica
-Rode no terminal da VPS:
+### B. Basic Installation
+Run in the VPS terminal:
 ```bash
-# Atualizar sistema
+# Update system
 sudo apt update && sudo apt upgrade -y
 
-# Instalar Node.js 18+
+# Install Node.js 18+
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# Instalar gerenciador de processos (PM2)
+# Install process manager (PM2)
 sudo npm install -g pm2
 
-# Instalar Servidor Web (Nginx)
+# Install Web Server (Nginx)
 sudo apt install -y nginx
 
-# Instalar Certbot (para HTTPS/Cadeado)
+# Install Certbot (for HTTPS/Lock)
 sudo apt install -y certbot python3-certbot-nginx
 ```
 
 ---
 
-## 3️⃣ Configurando o Backend e Frontend
+## 3️⃣ Configuring Backend and Frontend
 
-### A. Clonar o Projeto
-Na VPS (`/var/www` é o padrão para sites):
+### A. Clone the Project
+On the VPS (`/var/www` is the standard for sites):
 ```bash
 cd /var/www
 git clone https://github.com/cryptoraiz/arc-invoice.git
@@ -80,61 +80,61 @@ cd arc-invoice
 
 ### B. Setup
 ```bash
-# Instalar dependências globais
+# Install global dependencies
 npm install
 
-# Instalar dependências do Frontend e Backend
+# Install Frontend and Backend dependencies
 cd frontend && npm install
 cd ../backend && npm install
 ```
 
-### C. Build do Frontend (React)
-O React precisa ser "compilado" para HTML/CSS/JS estático.
+### C. Build Frontend (React)
+React needs to be "compiled" to static HTML/CSS/JS.
 ```bash
 cd /var/www/arc-invoice/frontend
-# Crie o .env de produção
+# Create production .env
 nano .env
-# (Cole suas chaves da Arc Network aqui e salve com Ctrl+X, Y, Enter)
+# (Paste your Arc Network keys here and save with Ctrl+X, Y, Enter)
 
-# Compilar
+# Compile
 npm run build
 ```
-Isso cria uma pasta `dist` com seu site pronto.
+This creates a `dist` folder with your ready-to-use site.
 
-### D. Setup do Backend (Node.js)
+### D. Backend Setup (Node.js)
 ```bash
 cd /var/www/arc-invoice/backend
 nano .env.local
-# (Cole a string do MongoDB aqui)
+# (Paste the MongoDB connection string here)
 
-# Iniciar com PM2 (para ficar rodando para sempre)
+# Start with PM2 (to keep running forever)
 pm2 start server.js --name "arc-backend"
 pm2 save
 ```
 
 ---
 
-## 4️⃣ Configurando o Domínio (arcinvoice.xyz)
+## 4️⃣ Configuring the Domain (arcinvoice.xyz)
 
-1.  Vá onde você comprou o domínio (Namecheap, GoDaddy, etc).
-2.  Procure a configuração **DNS**.
-3.  Crie dois registros do tipo **A**:
-    *   **Host:** `@` ➔ **Value:** `IP_DA_SUA_VPS`
-    *   **Host:** `www` ➔ **Value:** `IP_DA_SUA_VPS`
+1.  Go to where you bought the domain (Namecheap, GoDaddy, etc.).
+2.  Look for **DNS** configuration.
+3.  Create two **A** type records:
+    *   **Host:** `@` ➔ **Value:** `YOUR_VPS_IP`
+    *   **Host:** `www` ➔ **Value:** `YOUR_VPS_IP`
 
 ---
 
-## 5️⃣ Colocando no Ar (Nginx)
+## 5️⃣ Going Live (Nginx)
 
-O Nginx vai receber quem digita `arcinvoice.xyz` e mostrar o React. Se for uma chamada de API, ele manda para o Backend.
+Nginx will receive whoever types `arcinvoice.xyz` and show React. If it's an API call, it sends it to the Backend.
 
-Apague a config padrão e crie a do Arc Invoice:
+Delete the default config and create the Arc Invoice one:
 ```bash
 sudo rm /etc/nginx/sites-enabled/default
 sudo nano /etc/nginx/sites-available/arcinvoice
 ```
 
-Cole isso (ajuste o domínio):
+Paste this (adjust the domain):
 ```nginx
 server {
     listen 80;
@@ -149,7 +149,7 @@ server {
 
     # Backend (API)
     location /api/ {
-        proxy_pass http://localhost:3000; # Porta do seu backend
+        proxy_pass http://localhost:3000; # Your backend port
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -159,7 +159,7 @@ server {
 }
 ```
 
-Ative o site e reinicie o Nginx:
+Enable the site and restart Nginx:
 ```bash
 sudo ln -s /etc/nginx/sites-available/arcinvoice /etc/nginx/sites-enabled/
 sudo nginx -t
@@ -168,19 +168,19 @@ sudo systemctl restart nginx
 
 ---
 
-## 6️⃣ HTTPS (Cadeado de Segurança)
+## 6️⃣ HTTPS (Security Lock)
 
-Finalize com o certificado SSL gratuito:
+Finish with free SSL certificate:
 ```bash
 sudo certbot --nginx -d arcinvoice.xyz -d www.arcinvoice.xyz
 ```
-Responda as perguntas e pronto! Seu site estará seguro em `https://arcinvoice.xyz`.
+Answer the questions and you're done! Your site will be secure at `https://arcinvoice.xyz`.
 
 ---
 
-## ✅ Resumo da Ópera
+## ✅ Summary
 
-1.  **Código:** Seu PC ➔ GitHub.
+1.  **Code:** Your PC ➔ GitHub.
 2.  **Deploy:** GitHub ➔ VPS.
-3.  **Build:** React vira HTML na pasta `dist`.
-4.  **Servidor:** Nginx serve o HTML e joga as APIs para o Node.js.
+3.  **Build:** React becomes HTML in the `dist` folder.
+4.  **Server:** Nginx serves HTML and routes APIs to Node.js.

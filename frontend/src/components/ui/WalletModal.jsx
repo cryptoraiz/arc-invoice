@@ -41,10 +41,10 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
     }
 
     const popularWallets = [
-        { name: 'Rainbow', icon: walletIcons['Rainbow'], description: 'Colorida e fácil de usar' },
-        { name: 'MetaMask', icon: walletIcons['MetaMask'], description: 'Popular para Ethereum' },
-        { name: 'WalletConnect', icon: walletIcons['WalletConnect'], description: 'Conectar via QR code' },
-        { name: 'Coinbase Wallet', icon: walletIcons['Coinbase Wallet'], description: 'Wallet oficial da Coinbase' },
+        { name: 'Rainbow', icon: walletIcons['Rainbow'], description: 'Colorful and simple' },
+        { name: 'MetaMask', icon: walletIcons['MetaMask'], description: 'Popular for Ethereum' },
+        { name: 'WalletConnect', icon: walletIcons['WalletConnect'], description: 'Connect via QR code' },
+        { name: 'Coinbase Wallet', icon: walletIcons['Coinbase Wallet'], description: 'Official Coinbase Wallet' },
     ]
 
     const getWalletIcon = (connector) => {
@@ -122,7 +122,7 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                     <div className="md:col-span-3 p-6 border-r border-white/10">
                                         <div className="flex items-center justify-between mb-2">
                                             <Dialog.Title className="text-2xl font-bold">
-                                                Conectar uma Carteira
+                                                Connect a Wallet
                                             </Dialog.Title>
                                             <button onClick={onClose} className="md:hidden text-gray-400">
                                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,7 +131,7 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                             </button>
                                         </div>
                                         <p className="text-sm text-gray-400 mb-6">
-                                            Escolha sua carteira preferida
+                                            Choose your preferred wallet
                                         </p>
 
                                         {/* Installed Wallets */}
@@ -139,7 +139,7 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                             <>
                                                 <div className="mb-3">
                                                     <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
-                                                        Instalado
+                                                        Installed
                                                     </h3>
                                                 </div>
                                                 <div className="space-y-2 mb-6">
@@ -160,7 +160,7 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                                                     {connector.name}
                                                                 </div>
                                                                 <div className="text-xs text-gray-500">
-                                                                    Detectada
+                                                                    Detected
                                                                 </div>
                                                             </div>
                                                             <svg className="w-5 h-5 text-gray-600 group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -206,7 +206,7 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                     <div className="hidden md:block md:col-span-2 p-6 bg-gradient-to-br from-blue-500/5 to-cyan-500/5">
                                         <div className="h-full flex flex-col">
                                             <h3 className="text-lg font-bold mb-4">
-                                                O que é uma Carteira?
+                                                What is a Wallet?
                                             </h3>
 
                                             <div className="space-y-6 flex-1">
@@ -215,9 +215,9 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                                         <span className="text-xl">🏦</span>
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-semibold text-sm mb-1">Seus Ativos Digitais</h4>
+                                                        <h4 className="font-semibold text-sm mb-1">Your Digital Assets</h4>
                                                         <p className="text-xs text-gray-400">
-                                                            Envie, receba e guarde seus tokens e NFTs com segurança total.
+                                                            Send, receive, and store your tokens and NFTs securely.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -227,29 +227,29 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                                         <span className="text-xl">🔑</span>
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-semibold text-sm mb-1">Login Universal</h4>
+                                                        <h4 className="font-semibold text-sm mb-1">Universal Login</h4>
                                                         <p className="text-xs text-gray-400">
-                                                            Chega de senhas. Use sua carteira para logar em qualquer app Web3.
+                                                            No more passwords. Use your wallet to log in to any Web3 app.
                                                         </p>
                                                     </div>
                                                 </div>
 
                                                 <div className="flex flex-col items-center justify-center mt-8 p-4 bg-blue-500/10 rounded-xl border border-blue-500/10 text-center">
-                                                    <p className="text-xs font-medium text-blue-300 mb-2">Novo no mundo Cripto?</p>
+                                                    <p className="text-xs font-medium text-blue-300 mb-2">New to Crypto?</p>
                                                     <a
                                                         href="https://ethereum.org/wallets/"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-colors"
                                                     >
-                                                        Obter uma Carteira
+                                                        Get a Wallet
                                                     </a>
                                                 </div>
                                             </div>
 
                                             <div className="mt-auto pt-4 border-t border-white/10 text-center">
                                                 <a href="#" className="text-xs text-blue-400/50 hover:text-blue-400 transition-colors">
-                                                    Saiba mais sobre wallets
+                                                    Learn more about wallets
                                                 </a>
                                             </div>
                                         </div>

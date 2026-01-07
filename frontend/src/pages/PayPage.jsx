@@ -25,6 +25,16 @@ export default function PayPage() {
     const [error, setError] = useState('')
     const [timeLeft, setTimeLeft] = useState(null)
     const [isExpired, setIsExpired] = useState(false)
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
+    // Mouse tracking for spotlight effect
+    const handleMouseMove = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect()
+        setMousePosition({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        })
+    }
 
     // Wagmi Hooks
     const chainId = useChainId()
@@ -47,7 +57,7 @@ export default function PayPage() {
                     if (invoice) {
                         data = invoice;
                     } else {
-                        setError('Link de pagamento inválido ou expirado.');
+                        setError('Invalid or expired payment link.');
                     }
                 } catch (error) {
                     console.error('Failed to load invoice:', error);
@@ -121,7 +131,7 @@ export default function PayPage() {
             }
 
             console.error("Payment Error:", writeError)
-            toast.error("Erro no pagamento: " + (writeError.shortMessage || "Falha na transação"))
+            toast.error("Payment error: " + (writeError.shortMessage || "Transaction failed"))
         }
     }, [isConfirmed, hash, writeError])
 
@@ -157,7 +167,7 @@ export default function PayPage() {
         } catch (err) {
             console.error("Write Contract Error:", err)
             setIsPaying(false)
-            toast.error("Erro ao iniciar transação")
+            toast.error("Error starting transaction")
         }
     }
 
@@ -199,7 +209,7 @@ export default function PayPage() {
 
         setIsPaying(false)
         setPaymentComplete(true)
-        toast.success('Pagamento processado com sucesso!')
+        toast.success('Payment processed successfully!')
     }
 
     // ERROR STATE UI
@@ -220,7 +230,7 @@ export default function PayPage() {
                             </div>
 
                             <h2 className="text-2xl font-black text-white tracking-tight">
-                                Link Indisponível
+                                Link Unavailable
                             </h2>
 
                             <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
@@ -236,7 +246,7 @@ export default function PayPage() {
                                 O que fazer agora?
                             </p>
                             <p className="text-gray-300 text-xs px-2 leading-relaxed">
-                                Solicite um novo link para quem lhe enviou esta cobrança.
+                                Request a new link from whoever sent you this invoice.
                             </p>
                         </div>
 
@@ -248,7 +258,7 @@ export default function PayPage() {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
-                            Voltar ao Início
+                            Back to Home
                         </a>
                     </div>
                 </div>
@@ -264,7 +274,7 @@ export default function PayPage() {
                 <div className="text-center">
                     <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-400">
-                        {paymentData ? 'Inicializando...' : 'Buscando informações...'}
+                        {paymentData ? 'Initializing...' : 'Fetching information...'}
                     </p>
                 </div>
             </div>
@@ -280,7 +290,7 @@ export default function PayPage() {
                 paidAt: Date.now(),
                 payer: address
             })
-            toast.success('Comprovante baixado com sucesso!')
+            toast.success('Receipt downloaded successfully!')
         }
 
         return (
@@ -294,8 +304,8 @@ export default function PayPage() {
                             </div>
 
                             <div>
-                                <h1 className="text-2xl font-black mb-1">Pagamento Confirmado!</h1>
-                                <p className="text-sm text-gray-400">Transação processada com sucesso</p>
+                                <h1 className="text-2xl font-black mb-1">Payment Confirmed!</h1>
+                                <p className="text-sm text-gray-400">Transaction processed successfully</p>
                             </div>
 
                             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5 text-xs">
@@ -315,7 +325,7 @@ export default function PayPage() {
 
                             {txHash && (
                                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                                    <p className="text-xs text-gray-400 mb-1">Hash da Transação:</p>
+                                    <p className="text-xs text-gray-400 mb-1">Transaction Hash:</p>
                                     <p className="text-xs font-mono text-gray-300 break-all">
                                         {txHash.slice(0, 10)}...{txHash.slice(-8)}
                                     </p>
@@ -351,9 +361,9 @@ export default function PayPage() {
                 // Ensure we use existing data for receipt
                 txHash: paymentData.txHash || 'N/A',
                 paidAt: paymentData.paidAt || Date.now(),
-                payer: paymentData.payer || 'Desconhecido'
+                payer: paymentData.payer || 'Unknown'
             })
-            toast.success('Comprovante baixado com sucesso!')
+            toast.success('Receipt downloaded successfully!')
         }
 
         return (
@@ -369,7 +379,7 @@ export default function PayPage() {
                             <div>
                                 <h1 className="text-2xl font-black mb-1">{isPaid ? 'Link Expirado' : 'Tempo Esgotado'}</h1>
                                 <p className="text-sm text-gray-400">
-                                    {isPaid ? 'Este pagamento já foi realizado.' : 'O prazo para este pagamento expirou.'}
+                                    {isPaid ? 'This payment has already been completed.' : 'The deadline for this payment has expired.'}
                                 </p>
                             </div>
 
@@ -379,11 +389,11 @@ export default function PayPage() {
                                     <span className="font-bold">{paymentData.amount} {paymentData.currency}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-400">Destinatário:</span>
+                                    <span className="text-gray-400">Recipient:</span>
                                     <span className="font-bold">{paymentData.recipientName}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-400">Data Criação:</span>
+                                    <span className="text-gray-400">Creation Date:</span>
                                     <span className="text-white">
                                         {new Date(paymentData.createdAt).toLocaleDateString()}
                                     </span>
@@ -392,7 +402,7 @@ export default function PayPage() {
 
                             {paymentData.txHash && isPaid && (
                                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                                    <p className="text-xs text-gray-400 mb-1">Hash da Transação:</p>
+                                    <p className="text-xs text-gray-400 mb-1">Transaction Hash:</p>
                                     <p className="text-xs font-mono text-gray-300 break-all">
                                         {paymentData.txHash.slice(0, 10)}...{paymentData.txHash.slice(-8)}
                                     </p>
@@ -411,7 +421,7 @@ export default function PayPage() {
                             )}
 
                             <a href="/" className="block text-xs text-blue-400 hover:text-blue-300 mt-4">
-                                Voltar ao Início
+                                Back to Home
                             </a>
                         </div>
                     </div>
@@ -424,8 +434,14 @@ export default function PayPage() {
     return (
         <section className="flex-1 flex items-center justify-center p-4 h-full min-h-0">
             <div className="max-w-4xl w-full">
-                <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative group" onMouseMove={handleMouseMove}>
+                    {/* Spotlight Effect - Follows cursor */}
+                    <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl overflow-hidden"
+                        style={{
+                            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.05), transparent 40%)`
+                        }}
+                    />
 
                     <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
                         {/* Header */}
@@ -434,7 +450,7 @@ export default function PayPage() {
                                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
                                 Arc Invoice
                             </div>
-                            <h1 className="text-xl font-black">Solicitação de Pagamento</h1>
+                            <h1 className="text-xl font-black">Payment Request</h1>
 
                             {timeLeft !== null && (
                                 <div className="flex items-center justify-center gap-1.5 mt-2 bg-amber-500/10 border border-amber-500/20 rounded-lg py-1.5 px-3 w-fit mx-auto animate-pulse">
@@ -468,7 +484,7 @@ export default function PayPage() {
                                 {/* Descrição */}
                                 {paymentData.description && (
                                     <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                                        <p className="text-xs text-gray-400 mb-0.5">Descrição</p>
+                                        <p className="text-xs text-gray-400 mb-0.5">Description</p>
                                         <p className="text-xs text-white">{paymentData.description}</p>
                                     </div>
                                 )}
@@ -476,7 +492,7 @@ export default function PayPage() {
                                 {/* Detalhes */}
                                 <div className="space-y-1.5 text-xs">
                                     <div className="flex justify-between p-2 rounded-lg bg-white/[0.02]">
-                                        <span className="text-gray-400">Destinatário</span>
+                                        <span className="text-gray-400">Recipient</span>
                                         <span className="font-mono text-gray-300">
                                             {paymentData.recipientWallet.slice(0, 6)}...{paymentData.recipientWallet.slice(-4)}
                                         </span>
@@ -521,10 +537,10 @@ export default function PayPage() {
                                 ) : !isConnected ? (
                                     <div className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/10">
                                         <p className="text-sm text-gray-400 mb-2">
-                                            Conecte sua wallet para pagar
+                                            Connect your wallet to pay
                                         </p>
                                         <p className="text-xs text-gray-500">
-                                            Utilize o botão "Conectar Wallet" no topo
+                                            Use the "Connect Wallet" button at the top
                                         </p>
                                     </div>
                                 ) : (
@@ -549,7 +565,7 @@ export default function PayPage() {
                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                                     </svg>
-                                    Pagamento seguro via Arc Network
+                                    Secure payment via Arc Network
                                 </div>
                             </div>
 
