@@ -5,7 +5,7 @@ export default function HomePage() {
   const { isConnected } = useAccount()
 
   return (
-    <section className="flex-1 flex flex-col items-center justify-center py-6 w-full px-4 lg:px-6 min-h-0">
+    <section className="flex-1 flex flex-col items-center justify-center py-6 w-full px-4 lg:px-6 min-h-[calc(100vh-4rem)] overflow-y-auto">
       <div className="flex flex-col lg:flex-row items-center w-full max-w-7xl mx-auto gap-12 lg:gap-20 transition-all duration-700">
 
         {/* Coluna Esquerda - Hero (Animada) */}

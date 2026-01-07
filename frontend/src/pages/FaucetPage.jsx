@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect } from 'react'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { toast } from 'sonner'
 import { arcTestnet } from '../config/wagmi'
@@ -19,6 +19,23 @@ export default function FaucetPage() {
     const [showShareModal, setShowShareModal] = useState(false)
     const [stats, setStats] = useState({ claims: 0, totalDistributed: 0, uniqueWallets: 0 })
 
+    const [timeLeft, setTimeLeft] = useState(null); // in MS
+
+    // Synchronously derive cached state to prevent flash when address loads
+    const getCachedCooldown = () => {
+        if (!address) return 0;
+        const savedEnd = localStorage.getItem(`faucet_cooldown_${address}`);
+        if (savedEnd) {
+            const remaining = parseInt(savedEnd) - Date.now();
+            return remaining > 0 ? remaining : 0;
+        }
+        return 0;
+    };
+
+    const cachedTime = getCachedCooldown();
+    // Use state if available, otherwise fallback to cache (instant red button)
+    const effectiveTimeLeft = timeLeft !== null ? timeLeft : cachedTime;
+
     // Poll stats every 5 seconds
     const fetchStats = async () => {
         try {
@@ -30,11 +47,81 @@ export default function FaucetPage() {
         }
     };
 
+    // Check individual eligibility
+    const checkEligibility = async () => {
+        if (!address) return;
+        try {
+            const res = await fetch(`${FAUCET_API_URL}/check?address=${address}`);
+            const data = await res.json();
+
+            if (data.canClaim === false) {
+                setTimeLeft(data.waitTimeMs);
+                setErrorMsg(`Wait for cooldown`);
+
+                // Update LocalStorage (Address Specific)
+                const endTime = Date.now() + data.waitTimeMs;
+                localStorage.setItem(`faucet_cooldown_${address}`, endTime.toString());
+            } else {
+                setTimeLeft(null);
+                setErrorMsg(null);
+                localStorage.removeItem(`faucet_cooldown_${address}`);
+                // Clean up old global key if exists
+                localStorage.removeItem('faucet_cooldown_end');
+            }
+        } catch (error) {
+            console.error("Error checking eligibility:", error);
+        }
+    };
+
+    // Initial Load
     useEffect(() => {
-        fetchStats(); // Initial load
-        const interval = setInterval(fetchStats, 5000); // Poll every 5s
+        fetchStats();
+        const interval = setInterval(fetchStats, 5000);
         return () => clearInterval(interval);
     }, []);
+
+    // Check eligibility when address changes
+    useEffect(() => {
+        if (address) {
+            // Initialize timeLeft with cache immediately if possible to start timer
+            const cached = getCachedCooldown();
+            if (cached > 0) setTimeLeft(cached);
+
+            checkEligibility();
+        } else {
+            setTimeLeft(null);
+        }
+    }, [address]);
+
+    // Countdown Timer
+    useEffect(() => {
+        if (!effectiveTimeLeft || effectiveTimeLeft <= 0) return;
+
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                // Handle case where prev might be null (transitioning from derived to state)
+                const current = prev !== null ? prev : getCachedCooldown();
+                const newVal = current - 1000;
+
+                if (newVal <= 0) {
+                    clearInterval(timer);
+                    if (address) localStorage.removeItem(`faucet_cooldown_${address}`);
+                    checkEligibility(); // Re-check server
+                    return 0;
+                }
+                return newVal;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [effectiveTimeLeft, address]); // Dep on effectiveTimeLeft to start/stop
+
+    const formatTime = (ms) => {
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / (1000 * 60)) % 60);
+        const hours = Math.floor((ms / (1000 * 60 * 60)));
+        return `${hours}h ${minutes}m ${seconds}s`;
+    };
 
     // Persistent Fireworks Logic 🎆
     useEffect(() => {
@@ -121,12 +208,23 @@ export default function FaucetPage() {
             setTxHash(data.txHash);
             toast.success("100 USDC sent! 🎉");
             fetchStats(); // Update immediately
+
+            // Set local cooldown immediately (optimistic ui or strict)
+            const waitTime = 24 * 60 * 60 * 1000;
+            setTimeLeft(waitTime);
+            localStorage.setItem(`faucet_cooldown_${address}`, (Date.now() + waitTime).toString());
+
             setShowShareModal(true);
 
         } catch (error) {
             console.error(error);
-            setErrorMsg(error.message);
-            setTimeout(() => setErrorMsg(null), 5000);
+            const msg = error.message;
+            setErrorMsg(msg);
+
+            // Only clear error if it's NOT a cooldown error
+            if (!msg.toLowerCase().includes('cooldown') && !msg.toLowerCase().includes('24h')) {
+                setTimeout(() => setErrorMsg(null), 5000);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -218,8 +316,8 @@ export default function FaucetPage() {
 
                                 <button
                                     onClick={handleClaim}
-                                    disabled={isLoading}
-                                    className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group transition-all ${errorMsg
+                                    disabled={isLoading || effectiveTimeLeft > 0}
+                                    className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group transition-all ${errorMsg || effectiveTimeLeft > 0
                                         ? 'bg-red-500/20 border border-red-500/50 hover:bg-red-500/30 shadow-red-500/10'
                                         : 'gradient-button shadow-cyan-500/20'
                                         }`}
@@ -228,6 +326,11 @@ export default function FaucetPage() {
                                         <>
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                             Processing...
+                                        </>
+                                    ) : (effectiveTimeLeft > 0) ? (
+                                        <>
+                                            <span className="text-xl">⏳</span>
+                                            Cooldown Active: {formatTime(effectiveTimeLeft)}
                                         </>
                                     ) : errorMsg ? (
                                         <>
@@ -307,7 +410,7 @@ export default function FaucetPage() {
 
                             {txHash && (
                                 <a
-                                    href={`https://explorer.testnet.arc.network/tx/${txHash}`}
+                                    href={`https://testnet.arcscan.app/tx/${txHash}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block text-xs text-blue-400 hover:text-blue-300 underline mt-2"

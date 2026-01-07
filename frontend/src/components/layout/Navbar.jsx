@@ -74,7 +74,7 @@ export default function Navbar() {
 
     let mounted = true
     let pollAttempts = 0
-    const maxPollAttempts = 10 // Poll for 5 seconds total
+    const maxPollAttempts = 30 // Poll for 15 seconds total
     let retryCount = 0
     const maxRetries = 2
 

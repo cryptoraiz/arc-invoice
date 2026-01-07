@@ -182,8 +182,8 @@ const drawReceiptOnDoc = (doc, paymentData) => {
         doc.setTextColor(...COLORS.accent);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.textWithLink('Ver no Etherscan ->', 20, y, {
-            url: `https://etherscan.io/tx/${paymentData.txHash}`
+        doc.textWithLink('Ver no ArcScan ->', 20, y, {
+            url: `https://testnet.arcscan.app/tx/${paymentData.txHash}`
         });
     }
 

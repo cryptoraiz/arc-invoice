@@ -1,0 +1,297 @@
+// ZERO DEPENDENCY BACKEND
+// No Express, No Cors package. Just native Node.js and dynamic PG.
+
+export default async function handler(req, res) {
+    // 1. CORS Headers (Manual)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+    // 2. Handle Preflight
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
+    // 3. Routing Helpers
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = url.pathname; // e.g. /api/invoices/create
+
+    console.log(`REQ: ${req.method} ${pathname}`);
+
+    try {
+        // --- ROUTER ---
+
+        // POST /api/invoices/create
+        if (req.method === 'POST' && pathname === '/api/invoices/create') {
+            return await handleCreateInvoice(req, res);
+        }
+
+        // GET /api/invoices/get?id=...
+        if (req.method === 'GET' && pathname === '/api/invoices/get') {
+            return await handleGetInvoiceById(req, res, url.searchParams);
+        }
+
+        // GET /api/diagnose
+        if (req.method === 'GET' && pathname === '/api/diagnose') {
+            return await handleDiagnose(req, res);
+        }
+
+        // POST /api/faucet
+        if (req.method === 'POST' && pathname === '/api/faucet') {
+            return await handleFaucet(req, res);
+        }
+
+        // GET /api/faucet/stats
+        if (req.method === 'GET' && pathname === '/api/faucet/stats') {
+            return await handleFaucetStats(req, res);
+        }
+
+        // GET /api/faucet/check
+        if (req.method === 'GET' && pathname === '/api/faucet/check') {
+            return await handleFaucetCheck(req, res, url.searchParams);
+        }
+
+        // GET / (Health)
+        if (pathname === '/' || pathname === '/api') {
+            return res.status(200).json({ status: 'ok', msg: 'Zero-Dep Backend Online 🟢' });
+        }
+
+        // 404
+        return res.status(404).json({ error: 'Not Found', path: pathname });
+
+    } catch (error) {
+        console.error('SERVER ERROR:', error);
+        return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+}
+
+// --- HANDLERS ---
+
+async function handleCreateInvoice(req, res) {
+    const body = req.body; // Vercel parses JSON body automatically for us
+    const { id, fromWallet, toWallet, recipientName, amount, currency, description } = body;
+
+    if (!id || !fromWallet || !toWallet || !amount) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const db = await getDb();
+    const saved = await db.add({
+        id, fromWallet, recipientWallet: toWallet, recipientName: recipientName || 'Unknown',
+        amount, currency, description: description || '', status: 'pending', createdAt: Date.now()
+    });
+
+    return res.status(201).json({ success: true, invoiceId: saved.id });
+}
+
+async function handleGetInvoiceById(req, res, params) {
+    const id = params.get('id');
+    if (!id) return res.status(400).json({ error: 'Missing ID' });
+
+    const db = await getDb();
+    const invoice = await db.findById(id);
+
+    if (!invoice) return res.status(404).json({ error: 'Not Found' });
+    return res.status(200).json({ success: true, invoice });
+}
+
+async function handleDiagnose(req, res) {
+    try {
+        const db = await getDb();
+        const result = await db.query('SELECT count(*) FROM invoices');
+        return res.status(200).json({
+            status: 'ok',
+            db: 'Connected 🟢',
+            invoices_count: result.rows[0].count
+        });
+    } catch (e) {
+        return res.status(500).json({
+            status: 'error',
+            msg: 'DB Fail 🔴',
+            error: e.message
+        });
+    }
+}
+
+// --- DB LAYER (Lazy) ---
+let pool = null;
+async function getDb() {
+    if (pool) return pool; // Return cached pool
+
+    // Dynamic import PG to avoid startup crash
+    const { default: pg } = await import('pg');
+    const { Pool } = pg;
+    pg.types.setTypeParser(20, (val) => parseInt(val, 10));
+
+    if (!process.env.POSTGRES_URL) throw new Error('POSTGRES_URL missing');
+
+    pool = new Pool({
+        connectionString: process.env.POSTGRES_URL,
+        ssl: { rejectUnauthorized: false }, // Vercel strict production
+        connectionTimeoutMillis: 5000
+    });
+
+    // Helper methods attached to pool for convenience
+    pool.add = async (invoice) => {
+        const q = `INSERT INTO invoices (id, "fromWallet", "recipientWallet", "recipientName", amount, currency, description, status, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`;
+        const v = [invoice.id, invoice.fromWallet, invoice.recipientWallet, invoice.recipientName, invoice.amount, invoice.currency, invoice.description, invoice.status, invoice.createdAt, invoice.updatedAt || null];
+        const r = await pool.query(q, v);
+        return r.rows[0];
+    };
+
+    pool.findById = async (id) => {
+        const r = await pool.query('SELECT * FROM invoices WHERE id = $1', [id]);
+        return r.rows[0];
+    };
+
+    return pool;
+}
+
+// --- FAUCET CONSTANTS ---
+const FAUCET_AMOUNT = "100"; // Updated to 100 as per UI promise
+const COOLDOWN_HOURS = 24;
+const ARC_RPC_URL = 'https://rpc.testnet.arc.network';
+
+// --- FAUCET HANDLERS ---
+
+async function handleFaucetStats(req, res) {
+    try {
+        const db = await getDb();
+        // Check if table exists first (soft fail)
+        try {
+            const result = await db.query(`
+                SELECT 
+                    COUNT(*) as claims,
+                    COUNT(DISTINCT wallet_address) as unique_wallets,
+                    COALESCE(SUM(CAST(amount AS DECIMAL)), 0) as total_distributed
+                FROM faucet_claims
+            `);
+            const stats = result.rows[0];
+            return res.status(200).json({
+                claims: parseInt(stats.claims || 0),
+                totalDistributed: parseFloat(stats.total_distributed || 0),
+                uniqueWallets: parseInt(stats.unique_wallets || 0)
+            });
+        } catch (tableError) {
+            console.warn('Faucet Config Issue (Table missing?):', tableError.message);
+            return res.status(200).json({ claims: 0, totalDistributed: 0, uniqueWallets: 0 }); // Return empty stats instead of 500
+        }
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+}
+
+async function handleFaucet(req, res) {
+    try {
+        const { address } = req.body;
+        const ip = req.headers['x-forwarded-for'] || '0.0.0.0';
+
+        // 1. Validations
+        if (!address) return res.status(400).json({ error: 'Address required' });
+
+        const privateKey = process.env.FAUCET_PRIVATE_KEY ? process.env.FAUCET_PRIVATE_KEY.trim() : null;
+        if (!privateKey) return res.status(500).json({ error: 'Faucet Config Missing (Key)' });
+
+        // Lazy Load Ethers
+        const { ethers } = await import('ethers');
+
+        if (!ethers.isAddress(address)) return res.status(400).json({ error: 'Invalid Address' });
+
+        const db = await getDb();
+
+        // 2. Cooldown Check
+        const cooldownTime = Date.now() - (COOLDOWN_HOURS * 60 * 60 * 1000);
+        try {
+            const existing = await db.query(
+                'SELECT * FROM faucet_claims WHERE (wallet_address = $1 OR ip_address = $2) AND claimed_at > $3 LIMIT 1',
+                [address, ip, cooldownTime]
+            );
+            if (existing.rows.length > 0) {
+                return res.status(429).json({ error: 'Cooldown active. Try again in 24h.' });
+            }
+        } catch (e) {
+            // Table might be missing, try to create it? Or fail.
+            // Let's create it if missing ideally, but manual for now.
+            console.error('Faucet DB Error:', e.message);
+        }
+
+        // 3. Send Transaction
+        const provider = new ethers.JsonRpcProvider(ARC_RPC_URL);
+        const wallet = new ethers.Wallet(privateKey, provider);
+
+        const amountToSend = ethers.parseEther(FAUCET_AMOUNT);
+        const balance = await provider.getBalance(wallet.address);
+
+        if (balance < amountToSend) {
+            return res.status(503).json({ error: 'Faucet Dry (No Funds)' });
+        }
+
+        const tx = await wallet.sendTransaction({
+            to: address,
+            value: amountToSend
+        });
+
+        // 4. Record Claim
+        try {
+            await db.query(`
+                INSERT INTO faucet_claims(wallet_address, ip_address, amount, tx_hash, claimed_at)
+                VALUES($1, $2, $3, $4, $5)
+            `, [address, ip, FAUCET_AMOUNT, tx.hash, Date.now()]);
+        } catch (dbErr) {
+            console.error('Failed to save claim:', dbErr);
+            // Don't fail the request, users got money
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Sent ${FAUCET_AMOUNT} ARC to your wallet!`,
+            txHash: tx.hash
+        });
+
+    } catch (e) {
+        console.error('Faucet Processing Error:', e);
+        return res.status(500).json({ error: e.message });
+    }
+}
+
+async function handleFaucetCheck(req, res, params) {
+    try {
+        const address = params.get('address');
+        const ip = req.headers['x-forwarded-for'] || '0.0.0.0';
+
+        if (!address) return res.status(400).json({ error: 'Address required' });
+
+        const db = await getDb();
+        const cooldownTime = Date.now() - (COOLDOWN_HOURS * 60 * 60 * 1000);
+
+        try {
+            const result = await db.query(
+                'SELECT claimed_at FROM faucet_claims WHERE (wallet_address = $1 OR ip_address = $2) AND claimed_at > $3 ORDER BY claimed_at DESC LIMIT 1',
+                [address, ip, cooldownTime]
+            );
+
+            if (result.rows.length > 0) {
+                const lastClaimed = parseInt(result.rows[0].claimed_at);
+                const nextClaimTime = lastClaimed + (COOLDOWN_HOURS * 60 * 60 * 1000);
+                const waitTimeMs = Math.max(0, nextClaimTime - Date.now());
+
+                return res.status(200).json({
+                    canClaim: false,
+                    waitTimeMs,
+                    message: 'Cooldown active'
+                });
+            }
+
+            return res.status(200).json({ canClaim: true, waitTimeMs: 0 });
+
+        } catch (tableError) {
+            // If table doesn't exist, they can claim
+            return res.status(200).json({ canClaim: true, waitTimeMs: 0 })
+        }
+
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+}

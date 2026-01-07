@@ -11,6 +11,13 @@ export default function HistoryPage() {
     const [sentPayments, setSentPayments] = useState([]);
     const [activeTab, setActiveTab] = useState('all'); // all, received, pending, expired, sent
     const [searchTerm, setSearchTerm] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Initial loading effect
+    useEffect(() => {
+        const timer = setTimeout(() => setIsLoading(false), 2000); // Fail-safe fallback
+        return () => clearTimeout(timer);
+    }, []);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -32,6 +39,7 @@ export default function HistoryPage() {
         if (!isConnected || !address) {
             setReceivedLinks([]);
             setSentPayments([]);
+            setIsLoading(false);
             return;
         }
 
@@ -85,11 +93,14 @@ export default function HistoryPage() {
                 if (prev.length === 0) return receivedLocal;
                 return prev;
             });
+        } finally {
+            setIsLoading(false);
         }
     }, [address, isConnected]);
 
     // Polling Effect
     useEffect(() => {
+        setIsLoading(true); // Reset load on mount/address change
         fetchHistory(); // Initial fetch
         const interval = setInterval(fetchHistory, 5000); // 5s Poll
         return () => clearInterval(interval);
@@ -224,6 +235,22 @@ export default function HistoryPage() {
         }
     };
 
+    // Skeleton Component
+    const HistorySkeleton = () => (
+        <div className="group relative bg-white/[0.02] border border-white/5 rounded-xl p-4 animate-pulse">
+            <div className="flex items-center justify-between gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/10 shrink-0"></div>
+                <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-4 bg-white/10 rounded w-1/3"></div>
+                    <div className="h-3 bg-white/5 rounded w-1/4"></div>
+                </div>
+                <div className="text-right pl-4 space-y-2">
+                    <div className="h-6 bg-white/10 rounded w-20 ml-auto"></div>
+                </div>
+            </div>
+        </div>
+    );
+
     if (!isConnected) return (
         <section className="flex-1 flex flex-col items-center justify-center p-8 min-h-0 w-full">
             <div className="text-center space-y-4">
@@ -325,7 +352,13 @@ export default function HistoryPage() {
                         </div>
                     )}
 
-                    {paginatedItems.length === 0 ? (
+                    {isLoading && paginatedItems.length === 0 ? (
+                        <div className="grid gap-3">
+                            {[1, 2, 3].map((i) => (
+                                <HistorySkeleton key={i} />
+                            ))}
+                        </div>
+                    ) : paginatedItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 text-zinc-600 space-y-4">
                             <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center">
                                 <svg className="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
@@ -409,7 +442,7 @@ export default function HistoryPage() {
 
                                                 {item.txHash && (
                                                     <a
-                                                        href={`https://etherscan.io/tx/${item.txHash}`}
+                                                        href={`https://testnet.arcscan.app/tx/${item.txHash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-600 hover:text-white transition-colors"

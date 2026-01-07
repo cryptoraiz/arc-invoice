@@ -39,7 +39,7 @@ export default function PayPage() {
     // Wagmi Hooks
     const chainId = useChainId()
     const { switchChain } = useSwitchChain()
-    const { data: hash, writeContract, error: writeError } = useWriteContract()
+    const { data: hash, writeContractAsync, error: writeError } = useWriteContract()
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
     useEffect(() => {
@@ -155,19 +155,27 @@ export default function PayPage() {
         const tokenAddress = paymentData.currency === 'EURC' ? EURC_ADDRESS : USDC_ADDRESS;
 
         try {
-            writeContract({
+            await writeContractAsync({
                 address: tokenAddress,
                 abi: ERC20_ABI,
                 functionName: 'transfer',
                 args: [
                     paymentData.recipientWallet,
-                    parseUnits(paymentData.amount.toString(), 6) // Ambos têm 6 decimais
+                    parseUnits(paymentData.amount.toString(), 6)
                 ],
             })
         } catch (err) {
             console.error("Write Contract Error:", err)
             setIsPaying(false)
-            toast.error("Error starting transaction")
+
+            const msg = err.message?.toLowerCase() || '';
+            if (msg.includes('insufficient funds') || msg.includes('exceeds balance')) {
+                toast.error("⚠️ Saldo Insuficiente (Token + Gás)");
+            } else if (msg.includes('rejected')) {
+                toast.info("Transação cancelada");
+            } else {
+                toast.error("Erro: " + (err.shortMessage || "Falha na transação"));
+            }
         }
     }
 
@@ -286,6 +294,7 @@ export default function PayPage() {
         const handleDownloadReceipt = () => {
             generatePaymentReceipt({
                 ...paymentData,
+                status: 'paid', // Force confirmed status
                 txHash,
                 paidAt: Date.now(),
                 payer: address
@@ -432,7 +441,7 @@ export default function PayPage() {
 
     // MAIN FORM STATE
     return (
-        <section className="flex-1 flex items-center justify-center p-4 h-full min-h-0">
+        <section className="flex-1 flex flex-col items-center justify-start py-10 w-full min-h-screen overflow-y-auto">
             <div className="max-w-4xl w-full">
                 <div className="relative group" onMouseMove={handleMouseMove}>
                     {/* Spotlight Effect - Follows cursor */}
@@ -450,12 +459,12 @@ export default function PayPage() {
                                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
                                 Arc Invoice
                             </div>
-                            <h1 className="text-xl font-black">Payment Request</h1>
+                            <h1 className="text-3xl font-black mt-2">Payment Request</h1>
 
                             {timeLeft !== null && (
-                                <div className="flex items-center justify-center gap-1.5 mt-2 bg-amber-500/10 border border-amber-500/20 rounded-lg py-1.5 px-3 w-fit mx-auto animate-pulse">
-                                    <svg className="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    <span className="text-xs font-bold text-amber-500 font-mono tracking-wide">
+                                <div className="flex items-center justify-center gap-2 mt-2 bg-amber-500/10 border border-amber-500/20 rounded-lg py-2 px-4 w-fit mx-auto animate-pulse">
+                                    <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span className="text-base font-bold text-amber-500 font-mono tracking-wide">
                                         {formatTime(timeLeft)}
                                     </span>
                                 </div>

@@ -58,7 +58,7 @@ export default function PaymentForm() {
       creatorAddress: address, // Who created it (receives money)
       recipientName: formData.name,
       recipientWallet: formData.wallet, // Who pays
-      amount: formData.amount.replace(/\./g, '').replace(',', '.'), // Sanitize: 1.000,00 -> 1000.00
+      amount: formData.amount.replace(/,/g, ''), // Sanitize: 1,000.00 -> 1000.00
       currency: formData.currency,
       description: formData.description,
       status: 'pending',
@@ -83,7 +83,7 @@ export default function PaymentForm() {
         id: linkId,
         fromWallet: address, // The creator (Receiver of funds)
         toWallet: formData.wallet,   // The target (Payer of funds)
-        amount: formData.amount.replace(/\./g, '').replace(',', '.'), // Sanitize for backend
+        amount: formData.amount.replace(/,/g, ''), // Sanitize for backend (remove commas from 1,234.56)
         currency: formData.currency,
         description: formData.description,
         recipientName: formData.name
@@ -314,7 +314,7 @@ export default function PaymentForm() {
             {/* Share Options - Order: Whatsapp > Telegram > Gmail */}
             <div className="grid grid-cols-3 gap-3">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Arc Invoice Payment Link: ${generatedLink}`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`Arc Invoice Payment Link:\n${generatedLink}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-[#25D366]/5 border border-[#25D366]/20 hover:bg-[#25D366]/10 hover:scale-105 transition-all group/icon"

@@ -5,14 +5,8 @@ import AnimatedBackground from './AnimatedBackground'
 import { Toaster } from 'sonner'
 
 export default function Layout({ children }) {
-  const location = useLocation()
-  const isHistoryPage = location.pathname === '/history'
-  const isFAQPage = location.pathname === '/faq'
-  const isComoFuncionaPage = location.pathname === '/como-funciona'
-  const allowScroll = isHistoryPage || isFAQPage || isComoFuncionaPage
-
   return (
-    <div className={`bg-slate-950 text-white flex flex-col relative w-full ${allowScroll ? 'min-h-screen' : 'h-screen overflow-hidden'}`}>
+    <div className="bg-slate-950 text-white flex flex-col relative w-full min-h-screen">
       <Toaster position="bottom-right" theme="dark" richColors />
       <AnimatedBackground />
       <div className="flex-none z-50">
