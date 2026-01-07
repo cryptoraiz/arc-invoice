@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { db } from '../lib/store.js';
 
 // Configuration
-const FAUCET_AMOUNT = "50"; // Amount of USDC (native gas) to send
+const FAUCET_AMOUNT = "100"; // Amount of USDC (native gas) to send
 const COOLDOWN_HOURS = 24;
 const ARC_RPC_URL = 'https://rpc.testnet.arc.network';
 

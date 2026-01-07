@@ -119,7 +119,7 @@ export default function FaucetPage() {
             }
 
             setTxHash(data.txHash);
-            toast.success("50 USDC sent! 🎉");
+            toast.success("100 USDC sent! 🎉");
             fetchStats(); // Update immediately
             setShowShareModal(true);
 
@@ -132,7 +132,7 @@ export default function FaucetPage() {
         }
     }
 
-    const shareText = `Just claimed 50 USDC on Arc Testnet via Arc Invoice Faucet! 🚀\n\nFuel your wallet now:\nhttps://arcinvoice.xyz/faucet\n\n#ArcNetwork #DeFi #Web3`
+    const shareText = `Just claimed 100 USDC on Arc Testnet via Arc Invoice Faucet! 🚀\n\nFuel your wallet now:\nhttps://arcinvoice.xyz/faucet\n\n#ArcNetwork #DeFi #Web3`
     const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
     return (
@@ -155,7 +155,7 @@ export default function FaucetPage() {
                     {/* Main Value */}
                     <div className="space-y-2">
                         <h1 className="text-6xl lg:text-7xl font-black gradient-text tracking-tight">
-                            50 USDC
+                            100 USDC
                         </h1>
                         <h2 className="text-2xl lg:text-3xl font-bold text-white">
                             Completely Free
@@ -237,7 +237,7 @@ export default function FaucetPage() {
                                     ) : (
                                         <>
                                             <span className="text-xl">⚡</span>
-                                            Claim 50 USDC
+                                            Claim 100 USDC
                                             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                             </svg>
@@ -279,7 +279,7 @@ export default function FaucetPage() {
                                 <span className="text-3xl">🎉</span>
                             </div>
 
-                            <h3 className="text-xl font-bold text-white">50 USDC Sent!</h3>
+                            <h3 className="text-xl font-bold text-white">100 USDC Sent!</h3>
                             <p className="text-sm text-gray-400">
                                 Tokens have been sent to your wallet. Share with friends!
                             </p>
