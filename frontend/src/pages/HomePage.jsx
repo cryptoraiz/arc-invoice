@@ -21,7 +21,7 @@ export default function HomePage() {
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-none text-white drop-shadow-2xl">
               Receive instant
               <span className="block text-white">payments</span>
-              <span className="gradient-text block mt-2 whitespace-nowrap">in USDC & EURC</span>
+              <span className="gradient-text block mt-2 whitespace-nowrap">in USDC & EURC (V2)</span>
             </h1>
 
             <p className="text-lg md:text-xl text-gray-400 leading-relaxed lg:max-w-2xl transition-all">
