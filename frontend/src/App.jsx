@@ -5,7 +5,6 @@ import ComoFuncionaPage from './pages/ComoFuncionaPage'
 import FAQPage from './pages/FAQPage'
 import PayPage from './pages/PayPage'
 import HistoryPage from './pages/HistoryPage'
-
 import FaucetPage from './pages/FaucetPage'
 
 function App() {

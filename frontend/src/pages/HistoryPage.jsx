@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAccount } from 'wagmi';
-import { getPaymentLinksByWallet, getSentPaymentsByWallet, clearAllPaymentLinks, clearAllSentPayments } from '../utils/localStorage';
+import { getPaymentLinksByWallet, getSentPaymentsByWallet, clearPaymentLinksByScope, clearSentPaymentsByScope } from '../utils/localStorage';
 import { invoiceAPI } from '../services/invoiceService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateBatchReceipts } from '../utils/generateReceipt';
@@ -62,6 +62,7 @@ export default function HistoryPage() {
                 createdAt: inv.createdAt,
                 paidAt: inv.paidAt,
                 txHash: inv.txHash,
+                payer: inv.payer,
                 isBackend: true
             }));
 
@@ -201,32 +202,41 @@ export default function HistoryPage() {
     };
 
     const handleExportData = () => {
-        const allItems = [...receivedLinks, ...sentPayments];
-        if (allItems.length === 0) {
-            addToast('Nothing to export', 'Your history is empty.');
+        let exportItems = [];
+        // Filter export based on active tab
+        if (activeTab === 'all') exportItems = [...receivedItems, ...sentItems];
+        else if (activeTab === 'received') exportItems = receivedItems.filter(i => i.status === 'paid');
+        else if (activeTab === 'pending') exportItems = receivedItems.filter(i => i.status === 'pending' && !isExpired(i));
+        else if (activeTab === 'expired') exportItems = receivedItems.filter(i => i.status === 'pending' && isExpired(i));
+        else if (activeTab === 'sent') exportItems = sentItems;
+
+        if (exportItems.length === 0) {
+            addToast('Nothing to export', `No items found in ${activeTab.toUpperCase()} tab.`);
             return;
         }
-        generateBatchReceipts(allItems, address);
-        addToast('Backup Started', 'Full PDF download started.');
+        generateBatchReceipts(exportItems, address);
+        addToast('Backup Started', `Downloading PDF for ${activeTab.toUpperCase()} items.`);
     };
 
     const handleClearData = async () => {
         try {
+            const scope = activeTab; // 'all', 'received', 'pending', 'expired', 'sent'
+
             // Clear Local
-            clearAllPaymentLinks();
-            clearAllSentPayments();
+            clearPaymentLinksByScope(scope, address);
+            clearSentPaymentsByScope(scope, address);
 
             // Clear Backend
             if (isConnected && address) {
-                await invoiceAPI.deleteByWallet(address);
+                await invoiceAPI.deleteByWallet(address, scope);
             }
 
-            addToast('History Cleared', 'All data has been deleted.');
+            addToast('History Cleared', `${scope.toUpperCase()} data has been deleted.`);
+            setShowClearModal(false);
 
             setTimeout(() => {
-                setShowClearModal(false);
                 window.location.reload();
-            }, 1000);
+            }, 2000);
 
         } catch (error) {
             console.error('Error clearing history:', error);
@@ -297,7 +307,7 @@ export default function HistoryPage() {
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         {/* Tabs */}
                         <div className="flex gap-2 bg-white/[0.02] p-1 rounded-xl border border-white/5">
-                            {['All', 'Received', 'Pending', 'Sent'].map((tabLabel) => {
+                            {['All', 'Received', 'Pending', 'Expired', 'Sent'].map((tabLabel) => {
                                 const key = tabLabel === 'All' ? 'all' :
                                     tabLabel === 'Received' ? 'received' :
                                         tabLabel === 'Pending' ? 'pending' :
@@ -508,14 +518,14 @@ export default function HistoryPage() {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            CLEAR DATA
+                            {activeTab === 'all' ? 'CLEAR ALL DATA' : `DELETE ${activeTab.toUpperCase()}`}
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Notification Toast Container */}
-            <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+            <div className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none">
                 <AnimatePresence>
                     {toasts.map(toast => (
                         <motion.div
@@ -563,9 +573,11 @@ export default function HistoryPage() {
                                 </div>
 
                                 <div>
-                                    <h3 className="text-xl font-bold text-white mb-2">Clear History?</h3>
+                                    <h3 className="text-xl font-bold text-white mb-2">
+                                        Delete {activeTab === 'all' ? 'All' : activeTab.toUpperCase()} Items?
+                                    </h3>
                                     <p className="text-sm text-zinc-400 leading-relaxed">
-                                        You will lose all transaction history and saved receipts on this device.
+                                        You are about to delete <strong>{activeTab.toUpperCase()}</strong> history on this device.
                                         <br /><span className="text-red-400 font-bold">This action cannot be undone.</span>
                                     </p>
                                 </div>
@@ -590,7 +602,7 @@ export default function HistoryPage() {
                                             onClick={handleClearData}
                                             className="flex-1 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold text-sm shadow-lg shadow-red-500/20"
                                         >
-                                            Delete All
+                                            Delete {activeTab === 'all' ? 'All' : activeTab}
                                         </button>
                                     </div>
                                 </div>

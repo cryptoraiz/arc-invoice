@@ -238,23 +238,21 @@ export default function Navbar() {
                 >
                   FAQ
                 </Link>
-                {isConnected && (
-                  <Link
-                    to="/history"
-                    className={`text-sm font-medium transition relative ${isActive('/history') ? 'text-white' : 'text-gray-400 hover:text-white'
-                      }`}
-                  >
-                    History
-                    {notificationCount > 0 && (
-                      <span
-                        title={`${notificationCount} Pending Invoices`}
-                        className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse border border-slate-900"
-                      >
-                        {notificationCount}
-                      </span>
-                    )}
-                  </Link>
-                )}
+                <Link
+                  to="/history"
+                  className={`text-sm font-medium transition relative ${isActive('/history') ? 'text-white' : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  History
+                  {notificationCount > 0 && (
+                    <span
+                      title={`${notificationCount} Pending Invoices`}
+                      className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse border border-slate-900"
+                    >
+                      {notificationCount}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
 

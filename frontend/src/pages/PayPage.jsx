@@ -22,6 +22,7 @@ export default function PayPage() {
     const [isPaying, setIsPaying] = useState(false)
     const [paymentComplete, setPaymentComplete] = useState(false)
     const [txHash, setTxHash] = useState('')
+    const [confirmedPayer, setConfirmedPayer] = useState(null)
     const [error, setError] = useState('')
     const [timeLeft, setTimeLeft] = useState(null)
     const [isExpired, setIsExpired] = useState(false)
@@ -117,8 +118,8 @@ export default function PayPage() {
 
     // Monitor Transaction Success
     useEffect(() => {
-        if (isConfirmed && hash) {
-            handlePaymentSuccess(hash)
+        if (isConfirmed && hash && address) {
+            handlePaymentSuccess(hash, address)
         }
         if (writeError) {
             setIsPaying(false)
@@ -133,7 +134,7 @@ export default function PayPage() {
             console.error("Payment Error:", writeError)
             toast.error("Payment error: " + (writeError.shortMessage || "Transaction failed"))
         }
-    }, [isConfirmed, hash, writeError])
+    }, [isConfirmed, hash, writeError, address])
 
     const handlePayment = async () => {
         if (!paymentData) return
@@ -179,8 +180,10 @@ export default function PayPage() {
         }
     }
 
-    const handlePaymentSuccess = async (confirmedHash) => {
+    const handlePaymentSuccess = async (confirmedHash, payerAddress) => {
         setTxHash(confirmedHash)
+        setConfirmedPayer(payerAddress)
+        console.log('✅ Payment Success. Hash:', confirmedHash, 'Payer:', payerAddress);
 
         // Update localStorage if link exists (for receiver)
         if (paymentData?.id) {
@@ -188,7 +191,7 @@ export default function PayPage() {
                 status: 'paid',
                 txHash: confirmedHash,
                 paidAt: Date.now(),
-                payer: address
+                payer: payerAddress
             })
         }
 
@@ -197,7 +200,7 @@ export default function PayPage() {
             await invoiceAPI.updateStatus(linkId, 'paid', {
                 txHash: confirmedHash,
                 paidAt: Date.now(),
-                payer: address
+                payer: payerAddress
             })
         } catch (err) {
             console.error('Failed to sync payment status:', err)
@@ -297,7 +300,7 @@ export default function PayPage() {
                 status: 'paid', // Force confirmed status
                 txHash,
                 paidAt: Date.now(),
-                payer: address
+                payer: confirmedPayer // Use captured payer address
             })
             toast.success('Receipt downloaded successfully!')
         }

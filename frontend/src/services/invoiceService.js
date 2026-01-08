@@ -113,12 +113,12 @@ export const invoiceAPI = {
     },
 
     /**
-     * Delete invoices for a wallet
+     * Delete invoices for a wallet with optional scope
      */
-    async deleteByWallet(walletAddress) {
+    async deleteByWallet(walletAddress, scope = 'all') {
         try {
             const response = await fetch(
-                `${API_BASE_URL}/api/invoices/${walletAddress}`,
+                `${API_BASE_URL}/api/invoices/${walletAddress}?scope=${scope}`,
                 {
                     method: 'DELETE',
                     headers: {

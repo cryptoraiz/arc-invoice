@@ -6,8 +6,11 @@ import { savePaymentLink } from '../../utils/localStorage'
 import { invoiceAPI } from '../../services/invoiceService'
 import { toast } from 'sonner'
 
-export default function PaymentForm() {
+export default function PaymentForm({ theme = 'modern' }) {
   const { address, isConnected } = useAccount()
+  const { connect, connectors } = useConnect()
+
+  // State
   const [formData, setFormData] = useState({
     name: '',
     wallet: '',
@@ -18,123 +21,106 @@ export default function PaymentForm() {
   const [generatedLink, setGeneratedLink] = useState('')
   const [generatedLinkId, setGeneratedLinkId] = useState('')
   const [isCopied, setIsCopied] = useState(false)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const { connect, connectors } = useConnect()
 
-  // Helper para obter símbolo da moeda
-  const getCurrencySymbol = (currency) => {
-    return currency === 'EURC' ? '€' : '$'
+  // Spotlight State
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
+  const styles = {
+    container: "relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden",
+    textPrimary: "text-white",
+    textSecondary: "text-gray-400",
+    inputBg: "bg-black/20 border border-white/5 text-white placeholder:text-gray-500 hover:border-white/10 focus:border-blue-500/50 transition-colors",
+    label: "text-gray-500",
+    icon: "text-gray-500",
+    spotlight: "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem] overflow-hidden"
   }
 
-  // Track mouse position for spotlight effect
+  // Update wallet when connected
+  useEffect(() => {
+    if (isConnected && address) {
+      setFormData(prev => ({ ...prev, wallet: address }))
+    } else {
+      setFormData(prev => ({ ...prev, wallet: '' }))
+    }
+  }, [isConnected, address])
+
+  // Handle Spotlight
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect()
     setMousePosition({
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      y: e.clientY - rect.top,
     })
   }
 
+  // Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // If not connected, trigger connection instead of submit
     if (!isConnected) {
-      const injectedConnector = connectors.find(c => c.id === 'injected') || connectors[0]
-      if (injectedConnector) {
-        connect({ connector: injectedConnector })
-      } else {
-        console.error('No connector found')
-      }
+      toast.error('Please connect your wallet first')
       return
     }
 
-    // Generate unique link ID
-    const linkId = uuidv4()
-    const fullLink = `${window.location.origin}/pay/${linkId}`
-
-    const invoiceData = {
-      id: linkId,
-      creatorAddress: address, // Who created it (receives money)
-      recipientName: formData.name,
-      recipientWallet: formData.wallet, // Who pays
-      amount: formData.amount.replace(/,/g, ''), // Sanitize: 1,000.00 -> 1000.00
-      currency: formData.currency,
-      description: formData.description,
-      status: 'pending',
-      createdAt: Date.now()
-    }
-
-    // 1. Save to localStorage (Local History)
-    savePaymentLink(invoiceData)
-
-    // 2. Send to Backend (For recipient notification)
     try {
-      // Note: Backend expects 'fromWallet' as the creator (money receiver)
-      // and 'wallet' as the target user (money payer)
-      // We map our frontend fields to backend expected fields if needed,
-      // or ensure backend handles these fields.
-      // Based on typical schema:
-      // fromWallet: address (Creator)
-      // toWallet: formData.wallet (Payer) -- Wait, usually "Recipient of Invoice" is the Payer.
-      // Let's send a standard payload and let backend handle it.
+      const newId = uuidv4()
+      const linkData = {
+        id: newId,
+        creatorAddress: address,
+        ...formData,
+        createdAt: Date.now(),
+        status: 'pending'
+      }
 
-      await invoiceAPI.create({
-        id: linkId,
-        fromWallet: address, // The creator (Receiver of funds)
-        toWallet: formData.wallet,   // The target (Payer of funds)
-        amount: formData.amount.replace(/,/g, ''), // Sanitize for backend (remove commas from 1,234.56)
-        currency: formData.currency,
-        description: formData.description,
-        recipientName: formData.name
-      })
-      console.log('Invoice synced to backend')
-    } catch (err) {
-      console.error('Failed to sync to backend (offline mode?):', err)
-      // Non-blocking: user still gets the link
+      // Save locally
+      savePaymentLink(linkData)
+
+      // Save to backend (if available) - Silent fail if backend down
+      try {
+        await invoiceAPI.create(linkData)
+      } catch (err) {
+        console.warn('Backend sync failed, using local only', err)
+      }
+
+      // Generate Link
+      const linkUrl = `${window.location.origin}/pay/${newId}`
+      setGeneratedLink(linkUrl)
+      setGeneratedLinkId(newId)
+      toast.success('Payment Link Created!')
+
+    } catch (error) {
+      console.error(error)
+      toast.error('Error creating link')
     }
-
-    setGeneratedLinkId(linkId)
-    setGeneratedLink(fullLink)
-    console.log('Payment link created:', linkId)
   }
 
+  // Copy Clipboard
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedLink)
     setIsCopied(true)
-    // toast.success('Link copiado para a área de transferência!')
+    toast.success('Copied to clipboard!')
     setTimeout(() => setIsCopied(false), 2000)
   }
 
-  // Auto-fill wallet when connected, clear when disconnected
-  useEffect(() => {
-    if (isConnected && address && formData.wallet !== address) {
-      setFormData(prev => ({ ...prev, wallet: address }));
-    } else if (!isConnected && formData.wallet) {
-      // Clear wallet field when disconnected
-      setFormData(prev => ({ ...prev, wallet: '' }));
-    }
-  }, [isConnected, address, formData.wallet]);
-
   return (
     <div className="relative group" onMouseMove={handleMouseMove}>
-      {/* Spotlight Effect - Follows cursor */}
+      {/* Spotlight Effect - Modern Only */}
       <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem] overflow-hidden"
+        className={styles.spotlight}
         style={{
           background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.05), transparent 40%)`
         }}
       />
 
       {/* Card */}
-      <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl overflow-hidden">
+      <div className={styles.container}>
 
-        {/* Header - Muda dinamicamente */}
+        {/* Header */}
         <div className="flex items-start gap-3 mb-6 transition-all duration-300">
           <span className="text-2xl">{generatedLink ? '✨' : '💎'}</span>
           <div>
-            <h2 className="text-xl font-bold">{generatedLink ? 'Invoice Created!' : 'New Invoice'}</h2>
-            <p className="text-sm text-gray-400">
+            <h2 className={`text-xl font-bold ${styles.textPrimary}`}>{generatedLink ? 'Invoice Created!' : 'New Invoice'}</h2>
+            <p className={`text-sm ${styles.textSecondary}`}>
               {generatedLink ? 'Payment link ready to share.' : 'Configure payment details'}
             </p>
           </div>
@@ -147,14 +133,14 @@ export default function PaymentForm() {
             <div className="input-group">
               <input
                 type="text"
-                className="input-float py-3 text-sm"
+                className={`input-float py-3 text-sm ${styles.inputBg}`}
                 placeholder=" "
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
-              <label htmlFor="name" className="label-float top-1/2 -translate-y-1/2 text-xs">
+              <label htmlFor="name" className={`label-float top-1/2 -translate-y-1/2 text-xs ${styles.label}`}>
                 Name or Business
               </label>
             </div>
@@ -162,12 +148,12 @@ export default function PaymentForm() {
             {/* Wallet (Auto-filled & Read-only) */}
             <div className="input-group opacity-70 relative group/wallet">
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">💼</span>
+                <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm ${styles.icon}`}>💼</span>
                 <input
                   type="text"
-                  className={`input-float pl-10 py-3 text-sm bg-white/5 text-gray-400 
+                  className={`input-float pl-10 py-3 text-sm ${styles.inputBg} 
                     ${!isConnected
-                      ? 'cursor-help placeholder:text-gray-500 hover:placeholder:text-cyan-300 hover:placeholder:drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] hover:placeholder:shadow-black placeholder:transition-all placeholder:transition-duration-300'
+                      ? 'cursor-help'
                       : 'cursor-not-allowed'
                     }`}
                   placeholder={!isConnected ? "Connect wallet to auto-fill..." : " "}
@@ -176,7 +162,7 @@ export default function PaymentForm() {
                   readOnly
                 />
                 {isConnected && (
-                  <label htmlFor="wallet" className="label-float top-1/2 -translate-y-1/2 text-xs" style={{ left: '40px' }}>
+                  <label htmlFor="wallet" className={`label-float top-1/2 -translate-y-1/2 text-xs ${styles.label}`} style={{ left: '40px' }}>
                     Your Wallet (Auto)
                   </label>
                 )}
@@ -196,41 +182,35 @@ export default function PaymentForm() {
               {/* Valor */}
               <div className="input-group">
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
+                  <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-lg ${styles.icon}`}>
                     {getCurrencySymbol(formData.currency)}
                   </span>
                   <input
                     type="text"
-                    inputMode="numeric"
-                    className="input-float pl-8 text-xl tabular-nums font-bold placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-gray-500"
-                    placeholder="Enter amount"
+                    inputMode="decimal"
+                    className={`input-float pl-8 py-3 text-lg font-bold ${styles.inputBg}`}
+                    placeholder=" "
                     id="amount"
-                    style={{ padding: '14px 12px 14px 32px', height: '52px' }}
                     value={formData.amount}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-                      if (value === '') {
-                        setFormData({ ...formData, amount: '' });
-                        return;
-                      }
-                      const numberValue = parseInt(value, 10) / 100;
-                      // Using en-US for dot decimal
-                      const formatted = numberValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                      setFormData({ ...formData, amount: formatted });
+                      const val = e.target.value.replace(/[^0-9.]/g, '')
+                      setFormData({ ...formData, amount: val })
                     }}
                     required
                   />
+                  <label htmlFor="amount" className={`label-float top-1/2 -translate-y-1/2 text-xs ${styles.label}`} style={{ left: '32px' }}>
+                    Enter amount
+                  </label>
                 </div>
               </div>
 
-              {/* Moeda */}
-              <div className="h-[52px]">
-                <CurrencySelect
-                  value={formData.currency}
-                  onChange={(currency) => setFormData({ ...formData, currency })}
-                  compact={true}
-                />
-              </div>
+              {/* Moeda - Select Customizado */}
+              <CurrencySelect
+                value={formData.currency}
+                onChange={(value) => setFormData({ ...formData, currency: value })}
+                isClassic={false}
+                isLight={false}
+              />
             </div>
 
             {/* Taxa Info */}
@@ -242,14 +222,14 @@ export default function PaymentForm() {
             {/* Descrição */}
             <div className="input-group">
               <textarea
-                className="input-float resize-none py-3 text-sm"
+                className={`input-float resize-none py-3 text-sm ${styles.inputBg}`}
                 rows="2"
                 placeholder=" "
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               ></textarea>
-              <label htmlFor="description" className="label-float top-3 text-xs">
+              <label htmlFor="description" className={`label-float top-3 text-xs ${styles.label}`}>
                 Description (optional)
               </label>
             </div>
@@ -265,7 +245,7 @@ export default function PaymentForm() {
                 }
               } : undefined}
               className={`relative overflow-hidden w-full px-6 py-4 rounded-xl font-bold text-lg text-white flex items-center justify-center gap-2 transition-all ${isConnected
-                ? 'gradient-button'
+                ? 'gradient-button shadow-[0_4px_20px_rgba(37,99,235,0.3)] hover:shadow-[0_4px_30px_rgba(37,99,235,0.5)]'
                 : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20'
                 }`}
             >
@@ -286,18 +266,18 @@ export default function PaymentForm() {
           <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
             {/* Link Box */}
             <div className="p-1 rounded-2xl bg-gradient-to-r from-green-500/20 to-emerald-500/20">
-              <div className="bg-slate-950/80 backdrop-blur-xl rounded-xl p-5 border border-green-500/20 text-center space-y-4">
+              <div className="bg-slate-950/80 border-green-500/20 backdrop-blur-xl rounded-xl p-5 border text-center space-y-4">
                 <div className="mx-auto w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-2xl animate-[bounce_1s_infinite]">
                   ✓
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-bold">Payment Link</p>
-                  <div className="flex items-center gap-2 bg-black/40 rounded-lg p-2 border border-white/5">
-                    <span className="flex-1 text-sm text-cyan-400 font-mono truncate">{generatedLink}</span>
+                  <p className={`text-xs uppercase tracking-wider font-bold ${styles.label}`}>Payment Link</p>
+                  <div className="flex items-center gap-2 rounded-lg p-2 border bg-black/40 border-white/5">
+                    <span className="flex-1 text-sm font-mono truncate text-cyan-400">{generatedLink}</span>
                     <button
                       onClick={copyToClipboard}
-                      className="p-2 hover:bg-white/10 rounded-md transition-colors text-white relative group/copy"
+                      className="p-2 rounded-md transition-colors relative group/copy hover:bg-white/10 text-white"
                       title={isCopied ? "Copied!" : "Copy"}
                     >
                       {isCopied ? '✅' : '📋'}
@@ -372,4 +352,10 @@ export default function PaymentForm() {
       </div>
     </div>
   )
+}
+
+// Helper
+function getCurrencySymbol(currency) {
+  if (currency === 'EURC') return '€'
+  return '$'
 }

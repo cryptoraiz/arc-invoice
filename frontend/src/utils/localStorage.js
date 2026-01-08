@@ -90,11 +90,42 @@ export const deletePaymentLink = (linkId) => {
 };
 
 /**
- * Clear all payment links (use with caution)
+ * Clear payment links with scope
  */
-export const clearAllPaymentLinks = () => {
+export const clearPaymentLinksByScope = (scope = 'all', walletAddress) => {
     try {
-        localStorage.removeItem(STORAGE_KEY);
+        if (scope === 'all') {
+            localStorage.removeItem(STORAGE_KEY);
+            return true;
+        }
+
+        let links = getPaymentLinks();
+        // Return TRUE to KEEP, FALSE to DELETE
+        links = links.filter(link => {
+            // If wallet specific clearing is needed, check ownership first
+            const isOwner = link.creatorAddress?.toLowerCase() === walletAddress?.toLowerCase();
+            if (walletAddress && !isOwner) return true; // Keep others
+
+            if (scope === 'pending') {
+                // Delete if pending AND created > 24h ago
+                const isRecent = (Date.now() - link.createdAt) < (24 * 60 * 60 * 1000);
+                if (link.status === 'pending' && isRecent) return false;
+            }
+            if (scope === 'expired') {
+                // Delete if pending AND created <= 24h ago
+                const isOld = (Date.now() - link.createdAt) >= (24 * 60 * 60 * 1000);
+                if (link.status === 'pending' && isOld) return false;
+            }
+            if (scope === 'received') {
+                // For 'received', it's usually checking if status is paid. 
+                // LocalStorage 'links' are usually ones WE created (so we are receiver).
+                if (link.status === 'paid') return false;
+            }
+            // 'sent' items are in a different key, handled separately or ignored here
+            return true;
+        });
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
         return true;
     } catch (error) {
         console.error('Error clearing payment links:', error);
@@ -148,11 +179,29 @@ export const getSentPaymentsByWallet = (walletAddress) => {
 };
 
 /**
- * Clear all sent payments (use with caution)
+ * Clear sent payments with scope
  */
-export const clearAllSentPayments = () => {
+export const clearSentPaymentsByScope = (scope = 'all', walletAddress) => {
     try {
-        localStorage.removeItem(SENT_PAYMENTS_KEY);
+        // 'sent' items are ONLY relevant for 'sent' scope or 'all'
+        if (scope !== 'all' && scope !== 'sent') return true; // Do nothing
+
+        if (scope === 'all') {
+            localStorage.removeItem(SENT_PAYMENTS_KEY);
+            return true;
+        }
+
+        if (scope === 'sent') {
+            // Delete ALL sent payments for this wallet
+            let payments = getSentPayments();
+            payments = payments.filter(p => {
+                const isPayer = p.payer?.toLowerCase() === walletAddress?.toLowerCase();
+                return !isPayer; // Keep if NOT payer (i.e. delete if IS payer)
+            });
+            localStorage.setItem(SENT_PAYMENTS_KEY, JSON.stringify(payments));
+            return true;
+        }
+
         return true;
     } catch (error) {
         console.error('Error clearing sent payments:', error);

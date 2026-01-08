@@ -16,7 +16,8 @@ export default async function handler(req, res) {
 
     // 3. Routing Helpers
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const pathname = url.pathname; // e.g. /api/invoices/create
+    const pathname = url.pathname.replace(/\/$/, ""); // Normalize: remove trailing slash
+
 
     console.log(`REQ: ${req.method} ${pathname}`);
 
@@ -26,6 +27,24 @@ export default async function handler(req, res) {
         // POST /api/invoices/create
         if (req.method === 'POST' && pathname === '/api/invoices/create') {
             return await handleCreateInvoice(req, res);
+        }
+
+        // DELETE /api/invoices/:wallet
+        if (req.method === 'DELETE' && pathname.startsWith('/api/invoices/')) {
+            const wallet = pathname.split('/').filter(Boolean).pop();
+            return await handleDeleteInvoicesByWallet(req, res, wallet);
+        }
+
+        // POST /api/invoices/update
+        if (req.method === 'POST' && pathname === '/api/invoices/update') {
+            return await handleUpdateInvoiceStatus(req, res);
+        }
+
+        // GET /api/invoices/:wallet (Dynamic Route)
+        // Must be checked AFTER specific invoice routes to avoid collision
+        if (req.method === 'GET' && pathname.startsWith('/api/invoices/') && !pathname.includes('/get') && !pathname.includes('/create') && !pathname.includes('/update')) {
+            const wallet = pathname.split('/').filter(Boolean).pop();
+            return await handleGetInvoicesByWallet(req, res, wallet);
         }
 
         // GET /api/invoices/get?id=...
@@ -58,6 +77,11 @@ export default async function handler(req, res) {
             return res.status(200).json({ status: 'ok', msg: 'Zero-Dep Backend Online 🟢' });
         }
 
+        // POST /api/migrate (Temporary DB Upgrade)
+        if (req.method === 'POST' && pathname === '/api/migrate') {
+            return await handleMigrate(req, res);
+        }
+
         // 404
         return res.status(404).json({ error: 'Not Found', path: pathname });
 
@@ -66,6 +90,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 }
+
+// --- HANDLERS ---
 
 // --- HANDLERS ---
 
@@ -95,6 +121,88 @@ async function handleGetInvoiceById(req, res, params) {
 
     if (!invoice) return res.status(404).json({ error: 'Not Found' });
     return res.status(200).json({ success: true, invoice });
+}
+
+async function handleUpdateInvoiceStatus(req, res) {
+    const { id, status, txHash, paidAt, payer } = req.body;
+
+    if (!id || !status) return res.status(400).json({ error: 'Missing ID or Status' });
+
+    const db = await getDb();
+    // NOW SAVING: txHash, paidAt, payer (After migration)
+    const q = 'UPDATE invoices SET status = $1, "updatedAt" = $2, "txHash" = $3, "paidAt" = $4, "payer" = $5 WHERE id = $6 RETURNING *';
+    const v = [status, Date.now(), txHash || null, paidAt || Date.now(), payer || null, id];
+
+    try {
+        const result = await db.query(q, v);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Invoice Not Found' });
+        return res.status(200).json({ success: true, invoice: result.rows[0] });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+}
+
+async function handleGetInvoicesByWallet(req, res, wallet) {
+    if (!wallet) return res.status(400).json({ error: 'Wallet required' });
+
+    const db = await getDb();
+    // Get sent and received
+    const q = 'SELECT * FROM invoices WHERE "fromWallet" = $1 OR "recipientWallet" = $1 ORDER BY "createdAt" DESC LIMIT 50';
+    try {
+        const result = await db.query(q, [wallet]);
+        return res.status(200).json({ success: true, invoices: result.rows });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+}
+
+async function handleDeleteInvoicesByWallet(req, res, wallet) {
+    if (!wallet) return res.status(400).json({ error: 'Wallet required' });
+
+    // Parse scope from URL (e.g. ?scope=expired)
+    // Default to 'all' for backward compatibility
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const scope = url.searchParams.get('scope') || 'all';
+
+    const db = await getDb();
+    try {
+        let q = '';
+        const v = [wallet];
+
+        switch (scope) {
+            case 'pending':
+                // Delete pending created in the last 24h
+                q = 'DELETE FROM invoices WHERE ("fromWallet" = $1 OR "recipientWallet" = $1) AND status = \'pending\' AND "createdAt" > $2';
+                v.push(Date.now() - 24 * 60 * 60 * 1000); // 24h ago
+                break;
+
+            case 'expired':
+                // Delete pending created older than 24h
+                q = 'DELETE FROM invoices WHERE ("fromWallet" = $1 OR "recipientWallet" = $1) AND status = \'pending\' AND "createdAt" <= $2';
+                v.push(Date.now() - 24 * 60 * 60 * 1000); // 24h ago
+                break;
+
+            case 'received':
+                // Delete PAIF items where user is recipient
+                q = 'DELETE FROM invoices WHERE "recipientWallet" = $1 AND status = \'paid\'';
+                break;
+
+            case 'sent':
+                // Delete items where user is sender (regardless of status, but usually paid)
+                q = 'DELETE FROM invoices WHERE "fromWallet" = $1';
+                break;
+
+            case 'all':
+            default:
+                q = 'DELETE FROM invoices WHERE "fromWallet" = $1 OR "recipientWallet" = $1';
+                break;
+        }
+
+        await db.query(q, v);
+        return res.status(200).json({ success: true, message: `History cleared (Scope: ${scope})` });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
 }
 
 async function handleDiagnose(req, res) {
@@ -291,6 +399,18 @@ async function handleFaucetCheck(req, res, params) {
             return res.status(200).json({ canClaim: true, waitTimeMs: 0 })
         }
 
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+}
+
+async function handleMigrate(req, res) {
+    const db = await getDb();
+    try {
+        await db.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS "txHash" TEXT');
+        await db.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS "paidAt" BIGINT');
+        await db.query('ALTER TABLE invoices ADD COLUMN IF NOT EXISTS "payer" TEXT');
+        return res.status(200).json({ success: true, msg: 'Migration Applied: Added txHash, paidAt, payer' });
     } catch (e) {
         return res.status(500).json({ error: e.message });
     }
