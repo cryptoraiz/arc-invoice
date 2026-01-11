@@ -29,7 +29,7 @@ export default function HistoryPage() {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = 4;
 
     // Notification State
     const [toasts, setToasts] = useState([]);
