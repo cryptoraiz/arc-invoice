@@ -418,6 +418,26 @@ export default function HistoryPage() {
                                         tabLabel === 'Pending' ? 'pending' :
                                             tabLabel === 'Expired' ? 'expired' : 'sent';
                                 const isActive = activeTab === key;
+
+                                // Define conditional colors
+                                // Default (All)
+                                let activeColorClass = 'text-white';
+                                let inactiveColorClass = 'text-zinc-500 hover:text-white';
+
+                                if (tabLabel === 'Received') {
+                                    activeColorClass = 'text-emerald-400';
+                                    inactiveColorClass = 'text-emerald-600 hover:text-emerald-400';
+                                } else if (tabLabel === 'Sent') {
+                                    activeColorClass = 'text-rose-400';
+                                    inactiveColorClass = 'text-rose-600 hover:text-rose-400';
+                                } else if (tabLabel === 'Pending') {
+                                    activeColorClass = 'text-amber-400';
+                                    inactiveColorClass = 'text-amber-600 hover:text-amber-400';
+                                } else if (tabLabel === 'Expired') {
+                                    activeColorClass = 'text-zinc-400';
+                                    inactiveColorClass = 'text-zinc-600 hover:text-zinc-400';
+                                }
+
                                 return (
                                     <button
                                         key={key}
@@ -426,8 +446,8 @@ export default function HistoryPage() {
                                             setCurrentPage(1);
                                         }}
                                         className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${isActive
-                                            ? 'bg-zinc-800 text-white shadow-lg'
-                                            : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                                            ? `bg-zinc-800 shadow-lg ${activeColorClass}`
+                                            : `${inactiveColorClass} hover:bg-white/5`
                                             }`}
                                     >
                                         {tabLabel}
@@ -516,16 +536,7 @@ export default function HistoryPage() {
                                             {/* Row 1: Name + Badge */}
                                             <div className="flex items-center gap-3 mb-1">
                                                 <h3 className="text-base font-bold text-white truncate">{item.recipientName}</h3>
-                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${item.type === 'sent' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                                                    item.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                                                        (item.status === 'pending' && isExpired(item)) ? 'bg-zinc-800 text-zinc-500 border border-zinc-700' :
-                                                            'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                                                    }`}>
-                                                    {item.type === 'sent' ? 'Sent' :
-                                                        item.status === 'paid' ? 'Received' :
-                                                            (item.status === 'pending' && isExpired(item)) ? 'Expired' :
-                                                                'Pending'}
-                                                </span>
+
                                             </div>
 
                                             {/* Row 2: Date + Timer (Meta) */}
