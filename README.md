@@ -23,34 +23,43 @@ Arc Invoice creates **professional payment links** that:
 - ✅ Customer clicks and sees a beautiful page
 - ✅ Amount, description, and QR Code visible
 - ✅ Connect wallet and pay in 2 clicks
-- ✅ You receive USDC/EURC in < 1 second
+- ✅ **Receipts**: Auto-generated PDF receipts
+- ✅ **Mobile**: Deep linking for seamless mobile wallet payments
+- ✅ **Settlement**: You receive USDC/EURC in < 1 second
+
+---
+
+## ✨ Key Features
+
+- **🧾 Instant PDF Receipts**: Download professional proofs of payment automatically.
+- **🚰 Integrated Faucet**: Built-in access to Testnet tokens for easy testing.
+- **📱 Mobile Optimized**: Full support for WalletConnect and native Deep Linking.
+- **🔄 Real-Time Sync**: Instant status updates across all devices via WebSockets/Polling.
+- **⚡ Serverless Backend**: Powered by Vercel Functions for high availability.
 
 ---
 
 ## 🚀 Tech Stack
 
 ### **Frontend:**
-- React 18
-- Vite
-- Tailwind CSS
-- Wagmi + Viem (Web3)
-- Headless UI (custom dropdown)
-- Framer Motion (animations)
-- React QR Code
+- React 18 + Vite
+- Tailwind CSS (Premium UI)
+- Wagmi + Viem + WalletConnect
+- Headless UI
+- Framer Motion
 
 ### **Backend:**
-- Node.js + Express
-- PostgreSQL (Supabase/Neon) (Migrated from MongoDB)
+- Node.js (Vercel Serverless Functions)
+- Vercel Postgres (Neon)
 - Ethers.js v6
 
 ### **Blockchain:**
 - Arc Network Testnet
 - USDC/EURC (Circle)
-- Solidity 0.8.x
 
 ---
 
-## 📦 Installation (Simple)
+## 📦 Installation (Local Dev)
 
 ### **1. Clone the repository:**
 ```bash
@@ -64,61 +73,42 @@ cd frontend && npm install
 cd ../backend && npm install
 ```
 
-### **3. Configure the Database:**
-Create a PostgreSQL database and get the connection string. Rename `.env.example` to `.env` in the backend folder and add your specific URL.
+### **3. Environment Variables:**
+Create `.env` in `backend/` and `frontend/` based on `.env.example`.
+You will need a Postgres connection string (local or Vercel).
 
-### **4. Run everything together:**
-Just run the automatic script in the root:
+### **4. Run locally:**
 ```bash
+# Root directory
 ./start-dev.bat
 ```
-(This will start Frontend and Backend simultaneously in separate windows)
+(Starts Frontend + Backend concurrently)
 
 Access: `http://localhost:5173`
 
 ---
 
-## 📁 Project Structure
-
-```
-arc-invoice/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/         # Navbar, Footer
-│   │   │   ├── forms/          # PaymentForm
-│   │   │   └── ui/             # FaucetModal, Button
-│   │   ├── pages/              # PayPage, HistoryPage
-│   │   ├── config/             # wagmi.js
-│   │   ├── hooks/              # useInvoiceNotifications
-│   │   ├── utils/              # localStorage.js
-│   │   └── styles/             # globals.css
-│   ├── index.html
-│   └── package.json
-└── backend/
-    ├── server.js               # API Server
-    └── package.json
-```
-
----
-
 ## 🌐 Deploy
 
-### **Frontend (Vercel):**
-```bash
-cd frontend
-vercel deploy
-```
+### **Full Stack (Vercel):**
+This project is optimized for deployment on Vercel.
+
+1. Import the repository to Vercel.
+2. Configure the **Root Directory** as `frontend` (for UI) or set up a Monorepo structure.
+3. Add `POSTGRES_URL` environment variables.
+4. Deploy!
 
 ---
 
 ## 📝 Status
+
 - [x] Deploy smart contract on Arc Testnet
 - [x] Integrate Wagmi for wallet connection
 - [x] Implement link generation functionality
-- [x] Create Node.js + MongoDB backend
-- [x] Payment history
-- [x] Real-time notifications
+- [x] **Vercel Serverless + Postgres Backend**
+- [x] **PDF Receipt Generation**
+- [x] **Mobile Optimization & Deep Linking**
+- [x] Real-time notifications and Status Sync
 
 ---
 
@@ -134,7 +124,7 @@ vercel deploy
 
 ## 📄 License
 
-MIT © 2025 Arc Invoice
+MIT © 2026 Arc Invoice
 
 ---
 
