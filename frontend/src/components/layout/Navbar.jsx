@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useChainId } from 'wagmi'
@@ -138,7 +139,7 @@ export default function Navbar() {
         // console.log('✅ Auto-Switch successful!')
         // toast.success('Rede alterada com sucesso!')
       } catch (err) {
-        console.warn(`⚠️ Auto-Switch Error (Attempt ${retryCount + 1}):`, err)
+        console.warn(`⚠️ Auto - Switch Error(Attempt ${retryCount + 1}): `, err)
 
         // Ignora rejeição do usuário
         if (err.code === 4001 || err.message?.includes('rejected')) {
@@ -206,30 +207,30 @@ export default function Navbar() {
                 <Link
                   to="/"
                   className={`text-sm font-medium transition ${isActive('/') ? 'text-white' : 'text-gray-400 hover:text-white'
-                    }`}
+                    } `}
                 >
                   Home
                 </Link>
                 <Link
                   to="/como-funciona"
                   className={`text-sm font-medium transition ${isActive('/como-funciona') ? 'text-white' : 'text-gray-400 hover:text-white'
-                    }`}
+                    } `}
                 >
                   How It Works
                 </Link>
                 <Link
                   to="/faq"
                   className={`text-sm font-medium transition ${isActive('/faq') ? 'text-white' : 'text-gray-400 hover:text-white'
-                    }`}
+                    } `}
                 >
                   FAQ
                 </Link>
                 <Link
-                  to="/history"
-                  className={`text-sm font-medium transition relative ${isActive('/history') ? 'text-white' : 'text-gray-400 hover:text-white'
-                    }`}
+                  to="/activity"
+                  className={`text-sm font-medium transition relative ${isActive('/activity') ? 'text-white' : 'text-gray-400 hover:text-white'
+                    } `}
                 >
-                  History
+                  Activity
                   {notificationCount > 0 && (
                     <span className="relative group/notify">
                       {/* Badge Circle */}

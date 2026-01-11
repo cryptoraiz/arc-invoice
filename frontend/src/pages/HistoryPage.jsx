@@ -269,7 +269,7 @@ export default function HistoryPage() {
                 await invoiceAPI.deleteByWallet(address, scope);
             }
 
-            addToast('History Cleared', `${scope.toUpperCase()} data has been deleted.`);
+            addToast('Activity Cleared', `${scope.toUpperCase()} data has been deleted.`);
 
             // Notify other components (Navbar badge) to update immediately
             window.dispatchEvent(new Event('invoice_updated'));
@@ -281,8 +281,8 @@ export default function HistoryPage() {
             }, 2000);
 
         } catch (error) {
-            console.error('Error clearing history:', error);
-            addToast('Error', 'Failed to clear server history.');
+            console.error('Error clearing activity:', error);
+            addToast('Error', 'Failed to clear server activity.');
             setShowClearModal(false);
         } finally {
             setIsClearing(false);
@@ -333,7 +333,7 @@ export default function HistoryPage() {
                             Connect your wallet
                         </h2>
                         <p className="text-gray-400 text-base leading-relaxed mb-8">
-                            Connect your wallet to securely access your transaction history, invoices, and payment status.
+                            Connect your wallet to securely access your transaction activity, invoices, and payment status.
                         </p>
 
                         {/* Action Custom Button */}
@@ -498,7 +498,7 @@ export default function HistoryPage() {
                             <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center">
                                 <svg className="w-6 h-6 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                             </div>
-                            <p className="text-sm font-medium">No history found</p>
+                            <p className="text-sm font-medium">No activity found</p>
                         </div>
                     ) : (
                         <div className="grid gap-3" key={activeTab}>
@@ -728,7 +728,7 @@ export default function HistoryPage() {
                                         Delete {activeTab === 'all' ? 'All' : activeTab.toUpperCase()} Items?
                                     </h3>
                                     <p className="text-sm text-zinc-400 leading-relaxed">
-                                        You are about to delete <strong>{activeTab.toUpperCase()}</strong> history on this device.
+                                        You are about to delete <strong>{activeTab.toUpperCase()}</strong> activity on this device.
                                         <br /><span className="text-red-400 font-bold">This action cannot be undone.</span>
                                     </p>
                                 </div>

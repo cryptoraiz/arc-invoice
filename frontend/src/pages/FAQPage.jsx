@@ -31,8 +31,8 @@ export default function FAQPage() {
       answer: 'Yes! For security, each link expires 5 minutes after creation (for testing). You can create new links at any time, for free and instantly.'
     },
     {
-      question: 'Where do I see my history?',
-      answer: 'In the "History" tab, you see all created links, received and sent payments. You can download PDF receipts and clear data whenever you want.'
+      question: 'Where do I see my activity?',
+      answer: 'In the "Activity" tab, you see all created links, received and sent payments. You can download PDF receipts and clear data whenever you want.'
     },
     {
       question: 'How long does it take?',

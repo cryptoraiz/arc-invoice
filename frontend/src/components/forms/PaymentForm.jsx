@@ -118,7 +118,7 @@ export default function PaymentForm({ theme = 'modern' }) {
       console.error(error)
       // Differentiate between Wallet errors and Server errors if possible
       if (error.message && error.message.includes('HTTP error')) {
-        toast.error('Server Unreachable: Cold not save invoice online.')
+        toast.error('Server Unreachable: Could not save invoice online.')
       } else {
         toast.error('Error creating link: ' + (error.message || 'Unknown error'))
       }

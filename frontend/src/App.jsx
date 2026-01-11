@@ -14,7 +14,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/como-funciona" element={<ComoFuncionaPage />} />
         <Route path="/faq" element={<FAQPage />} />
-        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/activity" element={<HistoryPage />} />
         <Route path="/faucet" element={<FaucetPage />} />
         <Route path="/pay/:linkId" element={<PayPage />} />
       </Routes>
