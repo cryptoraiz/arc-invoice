@@ -49,7 +49,7 @@ const drawReceiptOnDoc = (doc, paymentData) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.setTextColor(...COLORS.text.light);
-    rightAlignText('COMPROVANTE', 25);
+    rightAlignText('RECEIPT', 25);
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -79,7 +79,7 @@ const drawReceiptOnDoc = (doc, paymentData) => {
     doc.setTextColor(...COLORS.text.muted);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL PAGO', 30, 62);
+    doc.text('TOTAL PAID', 30, 62);
 
     doc.setTextColor(...COLORS.accent);
     doc.setFontSize(24);
@@ -91,12 +91,12 @@ const drawReceiptOnDoc = (doc, paymentData) => {
     doc.setTextColor(...COLORS.text.muted);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    rightAlignText('DATA', 62, 180);
+    rightAlignText('DATE', 62, 180);
 
     doc.setTextColor(...COLORS.text.dark);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    const dateStr = new Date(paymentData.paidAt || Date.now()).toLocaleString('pt-BR');
+    const dateStr = new Date(paymentData.paidAt || Date.now()).toLocaleString('en-US');
     rightAlignText(dateStr, 73, 180);
 
     // === DETAILS SECTION ===
@@ -149,7 +149,7 @@ const drawReceiptOnDoc = (doc, paymentData) => {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
         doc.setTextColor(...COLORS.text.muted);
-        doc.text('DESCRIÇÃO', 20, y);
+        doc.text('DESCRIPTION', 20, y);
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
@@ -169,7 +169,7 @@ const drawReceiptOnDoc = (doc, paymentData) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.text.muted);
-    doc.text('ID DA TRANSAÇÃO (HASH)', 20, y);
+    doc.text('TRANSACTION ID (HASH)', 20, y);
 
     doc.setFont('courier', 'normal');
     doc.setFontSize(8);
@@ -182,7 +182,7 @@ const drawReceiptOnDoc = (doc, paymentData) => {
         doc.setTextColor(...COLORS.accent);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.textWithLink('Ver no ArcScan ->', 20, y, {
+        doc.textWithLink('View on ArcScan ->', 20, y, {
             url: `https://testnet.arcscan.app/tx/${paymentData.txHash}`
         });
     }
@@ -199,7 +199,7 @@ const drawReceiptOnDoc = (doc, paymentData) => {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...COLORS.text.muted);
-    centerText('Gerado via Arc Invoice - A nova era dos pagamentos.', pageHeight - 8);
+    centerText('Generated via Arc Invoice - The new era of payments.', pageHeight - 8);
 };
 
 /**
@@ -232,7 +232,7 @@ export const generateBatchReceipts = (paymentsArray, walletAddress) => {
     doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(148, 163, 184);
-    doc.text(`Carteira: ${walletAddress}`, 105, 135, { align: 'center' });
+    doc.text(`Wallet: ${walletAddress}`, 105, 135, { align: 'center' });
     doc.text(`${paymentsArray.length} Recorded Transactions`, 105, 145, { align: 'center' });
 
     doc.setFontSize(10);

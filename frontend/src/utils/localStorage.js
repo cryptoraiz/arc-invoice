@@ -100,30 +100,42 @@ export const clearPaymentLinksByScope = (scope = 'all', walletAddress) => {
         }
 
         let links = getPaymentLinks();
+        const blacklistIds = [];
+
         // Return TRUE to KEEP, FALSE to DELETE
         links = links.filter(link => {
             // If wallet specific clearing is needed, check ownership first
             const isOwner = link.creatorAddress?.toLowerCase() === walletAddress?.toLowerCase();
             if (walletAddress && !isOwner) return true; // Keep others
 
+            let shouldDelete = false;
+
             if (scope === 'pending') {
                 // Delete if pending AND created > 24h ago
                 const isRecent = (Date.now() - link.createdAt) < (24 * 60 * 60 * 1000);
-                if (link.status === 'pending' && isRecent) return false;
+                if (link.status === 'pending' && isRecent) shouldDelete = true;
             }
             if (scope === 'expired') {
-                // Delete if pending AND created <= 24h ago
-                const isOld = (Date.now() - link.createdAt) >= (24 * 60 * 60 * 1000);
-                if (link.status === 'pending' && isOld) return false;
+                // Delete if pending AND created >= 5 minutes ago (Standard expiration for demo/dev)
+                const isOld = (Date.now() - link.createdAt) >= (5 * 60 * 1000);
+                if (link.status === 'pending' && isOld) shouldDelete = true;
             }
             if (scope === 'received') {
                 // For 'received', it's usually checking if status is paid. 
                 // LocalStorage 'links' are usually ones WE created (so we are receiver).
-                if (link.status === 'paid') return false;
+                if (link.status === 'paid') shouldDelete = true;
             }
-            // 'sent' items are in a different key, handled separately or ignored here
+
+            if (shouldDelete) {
+                blacklistIds.push(link.id);
+                return false;
+            }
             return true;
         });
+
+        if (blacklistIds.length > 0) {
+            addToBlacklist(blacklistIds);
+        }
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
         return true;
@@ -156,6 +168,18 @@ export const getSentPayments = () => {
 export const saveSentPayment = (paymentData) => {
     try {
         const payments = getSentPayments();
+
+        // Prevent Duplicates: Check if txHash or ID already exists
+        const exists = payments.some(p =>
+            (paymentData.txHash && p.txHash === paymentData.txHash) ||
+            (paymentData.id && p.id === paymentData.id)
+        );
+
+        if (exists) {
+            // console.log("Payment already saved, skipping duplicate.");
+            return true;
+        }
+
         payments.push({
             ...paymentData,
             paidAt: Date.now()
@@ -207,4 +231,51 @@ export const clearSentPaymentsByScope = (scope = 'all', walletAddress) => {
         console.error('Error clearing sent payments:', error);
         return false;
     }
+};
+
+// ===== BLACKLIST MANAGEMENT (Hide persistent backend items) =====
+const BLACKLIST_KEY = 'arc_invoice_blacklist';
+
+export const syncLocalLinks = (latestItems) => {
+    try {
+        const localLinks = getPaymentLinks();
+        let hasChanges = false;
+
+        const updatedLinks = localLinks.map(local => {
+            // Find matching item in the latest data (backend result)
+            const fresh = latestItems.find(i => i.id === local.id);
+
+            // If we have newer info, update the local status
+            if (fresh && fresh.status && fresh.status !== local.status) {
+                hasChanges = true;
+                return { ...local, status: fresh.status };
+            }
+            return local;
+        });
+
+        if (hasChanges) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLinks));
+            // Update the event to notify listeners
+            window.dispatchEvent(new Event('storage'));
+        }
+    } catch (error) {
+        console.error('Error syncing local links:', error);
+    }
+};
+
+export const getBlacklist = () => {
+    try {
+        const list = localStorage.getItem(BLACKLIST_KEY);
+        return list ? JSON.parse(list) : [];
+    } catch { return []; }
+};
+
+export const addToBlacklist = (ids) => {
+    try {
+        const current = getBlacklist();
+        const newIds = ids.filter(id => !current.includes(id));
+        if (newIds.length > 0) {
+            localStorage.setItem(BLACKLIST_KEY, JSON.stringify([...current, ...newIds]));
+        }
+    } catch (e) { console.error('Error updating blacklist:', e); }
 };

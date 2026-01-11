@@ -68,7 +68,7 @@ export default function Navbar() {
   // Auto-switch with REAL chainId verification (bypass Rabby cache bug)
   useEffect(() => {
     if (!isConnected) {
-      console.log('❌ Not connected, skipping auto-switch')
+      // console.log('❌ Not connected, skipping auto-switch')
       return
     }
 
@@ -86,7 +86,7 @@ export default function Navbar() {
 
         const hexChainId = await provider.request({ method: 'eth_chainId' })
         const realChainId = parseInt(hexChainId, 16)
-        console.log('🔍 Real chainId from provider:', { hexChainId, realChainId, wagmiChainId: chainId })
+        // console.log('🔍 Real chainId from provider:', { hexChainId, realChainId, wagmiChainId: chainId })
         return realChainId
       } catch (err) {
         console.error('❌ Erro ao obter chainId do provider:', err)
@@ -101,12 +101,6 @@ export default function Navbar() {
       // Get real chainId from provider
       const realChainId = await getRealChainId()
 
-      console.log(`🔍 Polling (attempt ${pollAttempts + 1}/${maxPollAttempts})`, {
-        realChainId,
-        wagmiChainId: chainId,
-        isConnected
-      })
-
       if (!realChainId) {
         pollAttempts++
         if (pollAttempts < maxPollAttempts) {
@@ -120,14 +114,10 @@ export default function Navbar() {
 
       // chainId foi detectado, verificar se precisa trocar
       if (realChainId === arcTestnet.id) {
-        console.log('✅ Already on Arc Testnet (verified in provider)')
         return
       }
 
-      console.log('🚀 Different chainId detected, starting auto-switch...', {
-        from: realChainId,
-        to: arcTestnet.id
-      })
+      // Different chainId detected, starting auto-switch...
       attemptSwitch()
     }
 
@@ -137,39 +127,35 @@ export default function Navbar() {
       // Verify again before switching
       const realChainId = await getRealChainId()
       if (realChainId === arcTestnet.id) {
-        console.log('✅ Network already changed')
+        // console.log('✅ Network already changed')
         return
       }
 
-      console.log(`🔄 Auto-Switch started - Attempt ${retryCount + 1}/${maxRetries + 1}`, {
-        currentChain: realChainId,
-        targetChain: arcTestnet.id,
-        connector: connector?.name
-      })
+      // Auto-Switch started
 
       try {
         await switchChain({ chainId: arcTestnet.id })
-        console.log('✅ Auto-Switch successful!')
+        // console.log('✅ Auto-Switch successful!')
         // toast.success('Rede alterada com sucesso!')
       } catch (err) {
         console.warn(`⚠️ Auto-Switch Error (Attempt ${retryCount + 1}):`, err)
 
         // Ignora rejeição do usuário
         if (err.code === 4001 || err.message?.includes('rejected')) {
-          console.log('❌ User rejected network switch')
+          // console.log('❌ User rejected network switch')
           return
         }
 
         // Fallback para Raw Switch na última tentativa
         if (retryCount >= maxRetries) {
-          console.log("🔧 Tentando Fallback Raw Switch...")
+          // console.log("🔧 Tentando Fallback Raw Switch...")
           const success = await attemptRawSwitch()
           if (!success) {
             toast.error('Could not switch to Arc Testnet. Please switch manually.', { duration: 5000 })
           }
         } else {
           retryCount++
-          console.log(`⏳ Aguardando 1.5s para próxima tentativa...`)
+          // console.log(`⏳ Aguardando 1.5s para próxima tentativa...`)
           setTimeout(attemptSwitch, 1500)
         }
       }
@@ -245,11 +231,28 @@ export default function Navbar() {
                 >
                   History
                   {notificationCount > 0 && (
-                    <span
-                      title={`${notificationCount} Pending Invoices`}
-                      className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse border border-slate-900"
-                    >
-                      {notificationCount}
+                    <span className="relative group/notify">
+                      {/* Badge Circle */}
+                      <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse border border-slate-900">
+                        {notificationCount}
+                      </span>
+
+                      {/* Premium Custom Tooltip */}
+                      <div className="absolute top-0 left-full ml-6 opacity-0 group-hover/notify:opacity-100 pointer-events-none transition-all duration-200 z-50">
+                        {/* Glow */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-lg blur-md"></div>
+
+                        {/* Tooltip Card */}
+                        <div className="relative flex items-center justify-center px-3 py-2 bg-slate-900/95 backdrop-blur-md border border-yellow-500/40 rounded-lg shadow-xl shadow-yellow-500/10">
+                          {/* Text - Centered */}
+                          <span className="text-xs font-semibold text-white whitespace-nowrap">
+                            {notificationCount} Pending Invoice{notificationCount !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+
+                        {/* Arrow Pointer (Left side) */}
+                        <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 border-l border-b border-yellow-500/40 transform rotate-45"></div>
+                      </div>
                     </span>
                   )}
                 </Link>
@@ -290,7 +293,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={() => setShowWalletModal(true)}
-                  className="hidden md:block px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition"
+                  className="px-4 md:px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold hover:bg-white/10 transition"
                 >
                   Connect Wallet
                 </button>

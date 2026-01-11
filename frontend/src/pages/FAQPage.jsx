@@ -28,7 +28,7 @@ export default function FAQPage() {
     },
     {
       question: 'Do payment links expire?',
-      answer: 'Yes! For security, each link expires 24 hours after creation. You can create new links at any time, for free and instantly.'
+      answer: 'Yes! For security, each link expires 5 minutes after creation (for testing). You can create new links at any time, for free and instantly.'
     },
     {
       question: 'Where do I see my history?',

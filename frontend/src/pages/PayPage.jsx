@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAccount, useSwitchChain, useChainId } from 'wagmi'
+import { useAccount, useSwitchChain, useChainId, useReadContract } from 'wagmi'
 import { getPaymentLinkById, updatePaymentLink, saveSentPayment } from '../utils/localStorage'
 import { generatePaymentReceipt } from '../utils/generateReceipt'
 import { invoiceAPI } from '../services/invoiceService'
 import QRCode from 'react-qr-code'
+import WalletModal from '../components/ui/WalletModal'
 import { toast } from 'sonner'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { parseUnits } from 'viem'
+import { useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi'
+import { parseUnits, formatUnits } from 'viem'
 import { ERC20_ABI } from '../utils/abis'
 import { arcTestnet } from '../config/wagmi'
 
@@ -18,7 +19,10 @@ const EURC_ADDRESS = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
 export default function PayPage() {
     const { linkId } = useParams()
     const { address, isConnected } = useAccount()
+    const { connect, connectors } = useConnect()
+    const [isWalletModalOpen, setIsWalletModalOpen] = useState(false)
     const [paymentData, setPaymentData] = useState(null)
+    const [isLoading, setIsLoading] = useState(true) // Start loading
     const [isPaying, setIsPaying] = useState(false)
     const [paymentComplete, setPaymentComplete] = useState(false)
     const [txHash, setTxHash] = useState('')
@@ -43,46 +47,68 @@ export default function PayPage() {
     const { data: hash, writeContractAsync, error: writeError } = useWriteContract()
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
+    // Check token balance
+    const tokenAddress = paymentData?.currency === 'EURC' ? EURC_ADDRESS : USDC_ADDRESS;
+    const { data: balance } = useReadContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: 'balanceOf',
+        args: [address],
+        query: {
+            enabled: !!(address && paymentData?.amount && isConnected && chainId === arcTestnet.id)
+        }
+    })
+
+    // Check if user has sufficient balance
+    const requiredAmount = paymentData?.amount ? parseUnits(paymentData.amount.toString(), 6) : 0n;
+    const hasInsufficientBalance = balance !== undefined && balance < requiredAmount;
+
     useEffect(() => {
         const loadPaymentData = async () => {
-            // 1. Try to get from localStorage (Creator view)
-            const savedLink = getPaymentLinkById(linkId)
-            let data = null;
+            try {
+                // 1. Try to get from localStorage (Creator view)
+                const savedLink = getPaymentLinkById(linkId)
+                let data = null;
 
-            if (savedLink) {
-                data = savedLink;
-            } else {
-                // 2. Try to get from Backend (Payer view)
-                try {
+                if (savedLink) {
+                    // Normalize localStorage data to match component expectations
+                    data = {
+                        ...savedLink,
+                        recipientWallet: savedLink.wallet || savedLink.recipientWallet,
+                        recipientName: savedLink.name || savedLink.recipientName
+                    };
+                } else {
+                    // 2. Try to get from Backend (Payer view)
                     const invoice = await invoiceAPI.getById(linkId);
                     if (invoice) {
                         data = invoice;
                     } else {
                         setError('Invalid or expired payment link.');
                     }
-                } catch (error) {
-                    console.error('Failed to load invoice:', error);
-                    setError('Erro ao carregar dados do pagamento.');
                 }
-            }
 
-            if (data) {
-                setPaymentData(data);
+                if (data) {
+                    setPaymentData(data);
 
-                // Expiration Logic
-                if (data.status !== 'paid') {
-                    const created = new Date(Number(data.createdAt)).getTime();
-                    const now = Date.now();
-                    const expiry = created + (24 * 60 * 60 * 1000); // 24h Standard
-                    // const expiry = created + (2 * 60 * 1000); // 2min Test
-                    const diff = expiry - now;
+                    // Expiration Logic
+                    if (data.status !== 'paid') {
+                        const created = new Date(Number(data.createdAt)).getTime();
+                        const now = Date.now();
+                        const expiry = created + (5 * 60 * 1000); // 5min Test
+                        const diff = expiry - now;
 
-                    if (diff <= 0) {
-                        setIsExpired(true);
-                    } else {
-                        setTimeLeft(diff);
+                        if (diff <= 0) {
+                            setIsExpired(true);
+                        } else {
+                            setTimeLeft(diff);
+                        }
                     }
                 }
+            } catch (err) {
+                console.error('Critical Error loading payment:', err);
+                setError('Failed to load payment info.');
+            } finally {
+                setIsLoading(false); // Stop loading ALWAYS
             }
         };
 
@@ -90,6 +116,61 @@ export default function PayPage() {
             loadPaymentData();
         }
     }, [linkId])
+
+    // POLLING: Check for status updates every 3s (Syncs Payer <-> Creator)
+    useEffect(() => {
+        if (!linkId || paymentData?.status === 'paid' || paymentComplete) return;
+
+        const pollStatus = async () => {
+            try {
+                // Check local storage first (faster for Creator)
+                const localLink = getPaymentLinkById(linkId);
+                if (localLink?.status === 'paid') {
+                    setPaymentData(prev => ({ ...prev, ...localLink }));
+                    return;
+                }
+
+                // Check API (for Payer)
+                const invoice = await invoiceAPI.getById(linkId);
+
+                if (invoice) {
+                    // Self-Healing: If we have data now but had an error/no-data before, fix it
+                    if (!paymentData || error) {
+                        setPaymentData(invoice);
+                        setError(''); // Clear error if found
+                        setIsLoading(false);
+                    }
+
+                    // Sync Paid Status
+                    if (invoice.status === 'paid' && paymentData?.status !== 'paid') {
+                        setPaymentData(prev => ({
+                            ...prev,
+                            ...invoice, // Spread all new data
+                            status: 'paid'
+                        }));
+                    }
+                }
+            } catch (err) {
+                // Silent catch for polling
+            }
+        };
+
+        // 1. Polling (Cross-device/server sync) - 0.5s (Aggressive)
+        const interval = setInterval(pollStatus, 500);
+
+        // 2. Storage Event (Instant same-browser sync)
+        const handleStorageChange = (e) => {
+            if (e.key === 'payment_links') {
+                pollStatus(); // Force check immediately
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, [linkId, paymentData?.status, paymentComplete]);
 
     // Timer Effect
     useEffect(() => {
@@ -127,17 +208,35 @@ export default function PayPage() {
             // Silenciar erro de rejeição do usuário
             if (writeError.message?.toLowerCase().includes('user rejected') ||
                 writeError.shortMessage?.toLowerCase().includes('user rejected')) {
-                console.log("Transação cancelada pelo usuário")
+                // console.log("Transação cancelada pelo usuário")
                 return
             }
 
             console.error("Payment Error:", writeError)
             toast.error("Payment error: " + (writeError.shortMessage || "Transaction failed"))
         }
-    }, [isConfirmed, hash, writeError, address])
+
+        // Safety timeout: reset payment state after 20s if stuck
+        if (isPaying) {
+            const timeout = setTimeout(() => {
+                if (isPaying && !isConfirmed) {
+                    console.warn('Payment timeout after 20s')
+                    setIsPaying(false)
+                    toast.error('Transaction failed. Please check your wallet balance and try again.')
+                }
+            }, 20000) // 20 seconds
+
+            return () => clearTimeout(timeout)
+        }
+    }, [isConfirmed, hash, address, writeError, isPaying])
 
     const handlePayment = async () => {
         if (!paymentData) return
+
+        if (!isConnected) {
+            setIsWalletModalOpen(true)
+            return
+        }
 
         // Check if on correct network
         if (chainId !== arcTestnet.id) {
@@ -145,7 +244,7 @@ export default function PayPage() {
                 toast.info('Trocando para Arc Testnet...')
                 await switchChain({ chainId: arcTestnet.id })
             } catch (err) {
-                toast.error('Você precisa estar na Arc Testnet para pagar')
+                toast.error('You need to be on Arc Testnet to pay')
                 return
             }
         }
@@ -183,7 +282,7 @@ export default function PayPage() {
     const handlePaymentSuccess = async (confirmedHash, payerAddress) => {
         setTxHash(confirmedHash)
         setConfirmedPayer(payerAddress)
-        console.log('✅ Payment Success. Hash:', confirmedHash, 'Payer:', payerAddress);
+        // console.log('✅ Payment Success. Hash:', confirmedHash, 'Payer:', payerAddress);
 
         // Update localStorage if link exists (for receiver)
         if (paymentData?.id) {
@@ -248,6 +347,9 @@ export default function PayPage() {
                                 <p className="text-red-200 text-sm font-medium">
                                     {error}
                                 </p>
+                                <p className="text-[10px] text-red-500/50 font-mono mt-2">
+                                    ID: {linkId}
+                                </p>
                             </div>
                         </div>
 
@@ -278,36 +380,59 @@ export default function PayPage() {
     }
 
     // SAFETY CHECK - LOADING STATE
-    // This prevents the main UI from trying to render incomplete data
-    if (!paymentData || !paymentData.recipientWallet) {
+    if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-400">
-                        {paymentData ? 'Initializing...' : 'Fetching information...'}
-                    </p>
+                    <p className="text-gray-400">Verifying status...</p>
                 </div>
             </div>
         )
     }
 
-    // SUCCESS STATE
-    if (paymentComplete) {
+    // SAFETY CHECK - MISSING DATA (Stop-gap for Zombie/Corrupted links)
+    // If we are NOT loading, and have NO Error (handled above), but also NO Data
+    if (!paymentData || !paymentData.recipientWallet) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-red-500/10 border border-red-500/20 rounded-2xl p-8 text-center space-y-4">
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto text-red-500 text-3xl">
+                        ?
+                    </div>
+                    <h2 className="text-xl font-bold text-white">Payment Data Not Found</h2>
+                    <p className="text-gray-400 text-sm">
+                        The link failed to load and no error was returned. This implies the link might not exist.
+                    </p>
+                    <a href="/" className="inline-block mt-4 px-6 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all">
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        )
+    }
+
+    // SUCCESS STATE (Unified for both Instant & Already Paid)
+    if (paymentComplete || paymentData.status === 'paid') {
         const handleDownloadReceipt = () => {
             generatePaymentReceipt({
                 ...paymentData,
-                status: 'paid', // Force confirmed status
-                txHash,
-                paidAt: Date.now(),
-                payer: confirmedPayer // Use captured payer address
+                status: 'paid',
+                // Prioritize State > PaymentData > Fallback
+                txHash: txHash || paymentData.txHash,
+                paidAt: paymentData.paidAt || Date.now(),
+                payer: confirmedPayer || paymentData.payer || 'Anonymous',
+                // Ensure recipient wallet is consistent
+                recipientWallet: paymentData.recipientWallet || paymentData.walletAddress
             })
             toast.success('Receipt downloaded successfully!')
         }
+        const displayHash = txHash || paymentData.txHash;
 
         return (
             <section className="flex-1 flex items-center justify-center p-4 pb-8 h-full min-h-0">
-                <div className="max-w-md w-full opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]">
+
+                <div className="max-w-md w-full">
                     <div className="relative group">
                         <div className="absolute inset-0 bg-green-500/20 rounded-2xl blur-2xl"></div>
                         <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-6 text-center space-y-4">
@@ -335,27 +460,42 @@ export default function PayPage() {
                                 </div>
                             </div>
 
-                            {txHash && (
+                            {displayHash && (
                                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
                                     <p className="text-xs text-gray-400 mb-1">Transaction Hash:</p>
-                                    <p className="text-xs font-mono text-gray-300 break-all">
-                                        {txHash.slice(0, 10)}...{txHash.slice(-8)}
-                                    </p>
+                                    <a
+                                        href={`https://testnet.arcscan.app/tx/${displayHash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-mono text-blue-400 hover:text-blue-300 break-all transition-colors flex items-center justify-center gap-1"
+                                    >
+                                        {displayHash.slice(0, 10)}...{displayHash.slice(-10)}
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                    </a>
                                 </div>
                             )}
 
-                            {/* Download Receipt Button */}
                             <button
                                 onClick={handleDownloadReceipt}
-                                className="w-full px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:-translate-y-0.5 transition-all shadow-lg shadow-blue-500/50 flex items-center justify-center gap-2"
+                                className="w-full py-3.5 rounded-xl font-bold bg-blue-500 hover:bg-blue-600 text-white transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
                             >
-                                <span className="text-lg">📄</span>
-                                Baixar Comprovante PDF
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                Download PDF Receipt
                             </button>
 
-                            <p className="text-xs text-gray-500">
+                            <div className="pt-2 text-[10px] text-gray-500 font-mono">
                                 Link ID: {linkId}
-                            </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 text-center w-full relative z-10">
+                            <a
+                                href="/"
+                                className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-zinc-300 hover:text-white transition-all hover:scale-105 active:scale-95 group w-full cursor-pointer shadow-lg"
+                            >
+                                <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                                Back to Home
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -363,76 +503,64 @@ export default function PayPage() {
         )
     }
 
-    // ALREADY PAID / EXPIRED STATE
-    if ((paymentData.status === 'paid' || isExpired) && !paymentComplete) {
-        const isPaid = paymentData.status === 'paid';
-        const handleDownloadReceipt = () => {
-            if (!isPaid) return;
-            generatePaymentReceipt({
-                ...paymentData,
-                // Ensure we use existing data for receipt
-                txHash: paymentData.txHash || 'N/A',
-                paidAt: paymentData.paidAt || Date.now(),
-                payer: paymentData.payer || 'Unknown'
-            })
-            toast.success('Receipt downloaded successfully!')
-        }
+    // EXPIRED STATE (Only show if NOT paid)
+    if (isExpired && paymentData.status !== 'paid') {
 
         return (
             <section className="flex-1 flex items-center justify-center p-4 pb-8 h-full min-h-0">
                 <div className="max-w-md w-full opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]">
-                    <div className="relative group">
-                        <div className="absolute inset-0 bg-gray-500/10 rounded-2xl blur-2xl"></div>
-                        <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-6 text-center space-y-4">
-                            <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto">
-                                <span className="text-3xl">{isPaid ? '🔒' : '⏳'}</span>
-                            </div>
+                    <div className="relative group perspective-[1000px]">
 
-                            <div>
-                                <h1 className="text-2xl font-black mb-1">{isPaid ? 'Link Expirado' : 'Tempo Esgotado'}</h1>
-                                <p className="text-sm text-gray-400">
-                                    {isPaid ? 'This payment has already been completed.' : 'The deadline for this payment has expired.'}
-                                </p>
-                            </div>
+                        {/* Broken Card Container - Restored Effect */}
+                        <div className="relative flex flex-col gap-4 max-w-md w-full mx-auto">
 
-                            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5 text-xs">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-400">Valor:</span>
-                                    <span className="font-bold">{paymentData.amount} {paymentData.currency}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-400">Recipient:</span>
-                                    <span className="font-bold">{paymentData.recipientName}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-400">Creation Date:</span>
-                                    <span className="text-white">
-                                        {new Date(paymentData.createdAt).toLocaleDateString()}
-                                    </span>
+                            {/* TOP HALF - BROKEN */}
+                            <div className="relative bg-[#0F1115] border border-white/10 rounded-t-3xl p-8 pb-12 text-center shadow-2xl overflow-hidden"
+                                style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 85% 90%, 70% 100%, 55% 90%, 40% 100%, 25% 90%, 10% 100%, 0% 90%)' }}>
+                                <div className="space-y-4">
+                                    {/* Icon - Red Exclamation instead of Hourglass */}
+                                    <div className="w-20 h-20 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-red-500/20">
+                                        <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-black text-white mb-2 tracking-tight">Link Expired</h1>
+                                        <p className="text-gray-400 text-sm font-medium">This payment link is no longer valid.</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            {paymentData.txHash && isPaid && (
-                                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                                    <p className="text-xs text-gray-400 mb-1">Transaction Hash:</p>
-                                    <p className="text-xs font-mono text-gray-300 break-all">
-                                        {paymentData.txHash.slice(0, 10)}...{paymentData.txHash.slice(-8)}
-                                    </p>
+                            {/* BOTTOM HALF - BROKEN (Rotated slightly for effect) */}
+                            <div className="relative bg-[#0F1115] border border-white/10 rounded-b-3xl p-8 pt-12 text-center shadow-2xl mt-[-30px] origin-top-left rotate-[-2deg] opacity-75 grayscale transition-all hover:rotate-0 hover:opacity-100 hover:grayscale-0"
+                                style={{ clipPath: 'polygon(0% 10%, 10% 0%, 25% 10%, 40% 0%, 55% 10%, 70% 0%, 85% 10%, 100% 0%, 100% 100%, 0% 100%)' }}>
+
+                                <div className="space-y-6">
+                                    <div className="bg-white/[0.02] rounded-xl p-4 border border-white/5">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Amount Was</p>
+                                        <p className="text-2xl font-bold text-gray-500 line-through decoration-red-500/50">
+                                            {paymentData.amount} {paymentData.currency}
+                                        </p>
+                                    </div>
+
+                                    <div className="text-sm text-gray-400 bg-red-500/5 border border-red-500/10 p-4 rounded-xl leading-relaxed">
+                                        <strong className="text-red-400 block mb-1">Action Required</strong>
+                                        Please contact the person who sent you this link to request a new invoice.
+                                    </div>
                                 </div>
-                            )}
+                            </div>
 
-                            {/* Download Receipt Button (Only if Paid) */}
-                            {isPaid && (
-                                <button
-                                    onClick={handleDownloadReceipt}
-                                    className="w-full px-6 py-3 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 text-white transition-all border border-white/10 flex items-center justify-center gap-2"
-                                >
-                                    <span className="text-lg">📄</span>
-                                    Baixar Comprovante
-                                </button>
-                            )}
+                        </div>
 
-                            <a href="/" className="block text-xs text-blue-400 hover:text-blue-300 mt-4">
+                        {/* Back to Home - Prominent */}
+                        <div className="mt-8 max-w-md w-full mx-auto">
+                            <a
+                                href="/"
+                                className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold text-zinc-300 hover:text-white transition-all hover:scale-105 active:scale-95 group w-full cursor-pointer shadow-lg"
+                            >
+                                <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
                                 Back to Home
                             </a>
                         </div>
@@ -476,7 +604,7 @@ export default function PayPage() {
 
                         {/* Recipient Name Highlight */}
                         <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-                            <p className="text-xs text-gray-400 mb-1 text-center">Solicitado por</p>
+                            <p className="text-xs text-gray-400 mb-1 text-center">Requested by</p>
                             <p className="text-lg font-bold text-white text-center">{paymentData.recipientName}</p>
                         </div>
 
@@ -486,7 +614,7 @@ export default function PayPage() {
                             <div className="space-y-4">
                                 {/* Valor */}
                                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 text-center">
-                                    <p className="text-xs text-gray-400 mb-0.5">Valor a pagar</p>
+                                    <p className="text-xs text-gray-400 mb-0.5">Amount to pay</p>
                                     <div className="text-4xl font-black text-emerald-500">
                                         {paymentData.currency === 'EURC' ? '€' : '$'}{paymentData.amount}
                                     </div>
@@ -519,7 +647,7 @@ export default function PayPage() {
                                             <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                             </svg>
-                                            <span className="text-xs font-medium">Rede incorreta detectada</span>
+                                            <span className="text-xs font-medium">Wrong Network</span>
                                         </div>
 
                                         {/* Switch Network Button */}
@@ -527,8 +655,8 @@ export default function PayPage() {
                                             onClick={() => {
                                                 toast.info('Trocando para Arc Testnet...')
                                                 switchChain({ chainId: arcTestnet.id }).catch(err => {
-                                                    console.error('Erro ao trocar rede:', err)
-                                                    toast.error('Erro ao trocar de rede')
+                                                    console.error('Error switching network:', err)
+                                                    toast.error('Error switching network')
                                                 })
                                             }}
                                             className="w-full px-6 py-3 rounded-xl font-bold text-base bg-red-500 hover:bg-red-600 text-white transition-all shadow-lg shadow-red-500/20 flex items-center justify-center gap-4 group overflow-hidden relative"
@@ -538,7 +666,7 @@ export default function PayPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                             </svg>
 
-                                            <span className="relative z-10 uppercase tracking-wide">Trocar para Arc Testnet</span>
+                                            <span className="relative z-10 uppercase tracking-wide">Switch to Arc Testnet</span>
 
                                             {/* Right Arrow - Points Left (Inwards) */}
                                             <svg className="w-5 h-5 animate-bounce-left" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -548,28 +676,81 @@ export default function PayPage() {
                                     </div>
                                 ) : !isConnected ? (
                                     <div className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/10">
-                                        <p className="text-sm text-gray-400 mb-2">
-                                            Connect your wallet to pay
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                            Use the "Connect Wallet" button at the top
+                                        <button
+                                            onClick={() => setIsWalletModalOpen(true)}
+                                            className="w-full py-3.5 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 group"
+                                        >
+                                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            Connect Wallet to Pay
+                                        </button>
+                                        <p className="text-xs text-gray-500 mt-3">
+                                            You need to connect a wallet to approve the transaction
                                         </p>
                                     </div>
                                 ) : (
-                                    <button
-                                        onClick={handlePayment}
-                                        disabled={isPaying}
-                                        className="w-full px-6 py-3 rounded-xl font-bold text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                                    >
-                                        {isPaying || isConfirming ? (
-                                            <span className="flex items-center justify-center gap-2">
-                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                {isConfirming ? 'Confirmando...' : 'Processando...'}
-                                            </span>
-                                        ) : (
-                                            `Pagar ${paymentData.amount} ${paymentData.currency}`
+                                    <>
+                                        <button
+                                            onClick={handlePayment}
+                                            disabled={isPaying || hasInsufficientBalance}
+                                            className={`w-full px-6 py-3 rounded-xl font-bold text-base transition-all shadow-lg disabled:cursor-not-allowed disabled:hover:scale-100 ${hasInsufficientBalance
+                                                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-red-500/50'
+                                                : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:scale-[1.02] active:scale-[0.98] shadow-green-500/50 disabled:opacity-50'
+                                                }`}
+                                        >
+                                            {hasInsufficientBalance ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                    </svg>
+                                                    Insufficient Balance
+                                                </span>
+                                            ) : isPaying ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    {isConfirming ? 'Confirming...' : 'Processing...'}
+                                                </span>
+                                            ) : (
+                                                `Pay ${paymentData.amount} ${paymentData.currency}`
+                                            )}
+                                        </button>
+
+                                        {/* Insufficient Balance Info Card */}
+                                        {hasInsufficientBalance && balance !== undefined && (
+                                            <div className="mt-4 p-4 rounded-xl bg-white/[0.03] border border-red-500/20 backdrop-blur-sm">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                                                            <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm text-white font-medium mb-0.5">
+                                                                You need {Number(formatUnits(requiredAmount - balance, 6)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} more {paymentData.currency}
+                                                            </p>
+                                                            <p className="text-xs text-gray-400">
+                                                                to complete this payment
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <a
+                                                        href="/faucet"
+                                                        className="px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-sm font-semibold hover:bg-blue-500/20 transition-all flex items-center gap-2 whitespace-nowrap"
+                                                    >
+                                                        Get testnet tokens
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                                        </svg>
+                                                    </a>
+                                                </div>
+                                            </div>
                                         )}
-                                    </button>
+                                    </>
                                 )}
 
                                 {/* Info */}
@@ -583,17 +764,28 @@ export default function PayPage() {
 
                             {/* Right Column - QR Code */}
                             <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-white/[0.05] border border-white/10">
+
+
                                 <div className="bg-white p-3 rounded-lg mb-3">
                                     <QRCode value={window.location.href} size={220} />
                                 </div>
                                 <p className="text-xs text-gray-400 text-center">
-                                    Escaneie para pagar pelo celular
+                                    Scan to pay on mobile
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <WalletModal
+                isOpen={isWalletModalOpen}
+                onClose={() => setIsWalletModalOpen(false)}
+                connectors={connectors}
+                onSelectWallet={(connector) => {
+                    connect({ connector })
+                    setIsWalletModalOpen(false)
+                }}
+            />
         </section>
     )
 }

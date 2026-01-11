@@ -13,10 +13,11 @@ import keplrIcon from '../../assets/wallet-icons/keplr.png'
 import safeIcon from '../../assets/wallet-icons/safe.png'
 import bitgetIcon from '../../assets/wallet-icons/bitget.png'
 import okxIcon from '../../assets/wallet-icons/okx.png'
+import braveIcon from '../../assets/wallet-icons/brave.svg'
 
 export default function WalletModal({ isOpen, onClose, connectors, onSelectWallet }) {
     // Detect installed wallets by checking if connector is ready
-    const installedWallets = connectors.filter(c => c.ready !== false && c.id !== 'walletConnect')
+    const installedWallets = connectors.filter(c => c.ready !== false && c.name !== 'Injected')
 
     // Official Wallet Icons - Local Assets (Never breaks!)
     const walletIcons = {
@@ -32,20 +33,13 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
         'Safe': safeIcon,
         'Trust Wallet': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4', // Fallback URL
         'Trust': 'https://avatars.githubusercontent.com/u/32179842?s=200&v=4',
-        'Brave Wallet': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4', // Fallback URL
-        'Brave': 'https://avatars.githubusercontent.com/u/15649420?s=200&v=4',
+        'Brave Wallet': braveIcon,
+        'Brave': braveIcon,
         'OKX Wallet': okxIcon,
         'Bitget Wallet': bitgetIcon,
         'BitKeep': bitgetIcon,
         'Injected': 'https://www.svgrepo.com/show/331309/ethereum.svg' // Fallback URL
     }
-
-    const popularWallets = [
-        { name: 'Rainbow', icon: walletIcons['Rainbow'], description: 'Colorful and simple' },
-        { name: 'MetaMask', icon: walletIcons['MetaMask'], description: 'Popular for Ethereum' },
-        { name: 'WalletConnect', icon: walletIcons['WalletConnect'], description: 'Connect via QR code' },
-        { name: 'Coinbase Wallet', icon: walletIcons['Coinbase Wallet'], description: 'Official Coinbase Wallet' },
-    ]
 
     const getWalletIcon = (connector) => {
         if (!connector) return walletIcons['Injected']
@@ -135,11 +129,11 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                         </p>
 
                                         {/* Installed Wallets */}
-                                        {installedWallets.length > 0 && (
+                                        {installedWallets.length > 0 ? (
                                             <>
                                                 <div className="mb-3">
                                                     <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
-                                                        Installed
+                                                        Available
                                                     </h3>
                                                 </div>
                                                 <div className="space-y-2 mb-6">
@@ -170,36 +164,11 @@ export default function WalletModal({ isOpen, onClose, connectors, onSelectWalle
                                                     ))}
                                                 </div>
                                             </>
+                                        ) : (
+                                            <div className="p-4 text-center text-gray-400 text-sm">
+                                                No wallets detected. Please install a wallet extension.
+                                            </div>
                                         )}
-
-                                        {/* Popular Wallets */}
-                                        <div className="mb-3">
-                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                                Popular
-                                            </h3>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {popularWallets
-                                                .filter(wallet => !installedWallets.find(w => w.name === wallet.name))
-                                                .map((wallet) => (
-                                                    <div
-                                                        key={wallet.name}
-                                                        className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] border border-white/5 opacity-60 hover:opacity-100 cursor-not-allowed"
-                                                    >
-                                                        <div className="w-8 h-8 flex items-center justify-center">
-                                                            <img src={wallet.icon} alt={wallet.name} className="w-full h-full object-contain p-0.5" />
-                                                        </div>
-                                                        <div className="flex-1 text-left">
-                                                            <div className="font-semibold text-sm text-gray-400">
-                                                                {wallet.name}
-                                                            </div>
-                                                            <div className="text-xs text-gray-600">
-                                                                {wallet.description}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                        </div>
                                     </div>
 
                                     {/* Right: Educational Panel */}

@@ -1,5 +1,6 @@
 import { http, createConfig } from 'wagmi'
 import { mainnet, arbitrum, polygon, optimism, base } from 'wagmi/chains'
+import { walletConnect, injected, coinbaseWallet } from 'wagmi/connectors'
 
 // Arc Network Testnet Configuration
 export const arcTestnet = {
@@ -7,7 +8,7 @@ export const arcTestnet = {
   name: 'Arc Network Testnet',
   nativeCurrency: {
     decimals: 18,
-    name: 'USDC', // Arc uses USDC as native token for gas? Search result says "native token is USDC".
+    name: 'USDC',
     symbol: 'USDC',
   },
   rpcUrls: {
@@ -20,7 +21,7 @@ export const arcTestnet = {
   testnet: true,
 }
 
-// Sonic Testnet Configuration (for detection during auto-switch)
+// Sonic Testnet Configuration
 export const sonicTestnet = {
   id: 64165,
   name: 'Sonic Testnet',
@@ -39,8 +40,16 @@ export const sonicTestnet = {
   testnet: true,
 }
 
+// WalletConnect Project ID (Load from Env or use Public Fallback for generic testing)
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '3a8170812b534d0ff9d794f19a901d64';
+
 export const config = createConfig({
   chains: [arcTestnet, sonicTestnet, mainnet, arbitrum, polygon, optimism, base],
+  connectors: [
+    injected(),
+    walletConnect({ projectId, showQrModal: true }),
+    coinbaseWallet({ appName: 'Arc Invoice' }),
+  ],
   transports: {
     [arcTestnet.id]: http(),
     [sonicTestnet.id]: http(),

@@ -1,17 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAccount } from 'wagmi';
-import { getPaymentLinksByWallet, getSentPaymentsByWallet, clearPaymentLinksByScope, clearSentPaymentsByScope } from '../utils/localStorage';
+import { useAccount, useConnect } from 'wagmi';
+import { getPaymentLinksByWallet, getSentPaymentsByWallet, clearPaymentLinksByScope, clearSentPaymentsByScope, getBlacklist, syncLocalLinks } from '../utils/localStorage';
 import { invoiceAPI } from '../services/invoiceService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateBatchReceipts } from '../utils/generateReceipt';
+import WalletModal from '../components/ui/WalletModal';
 
 export default function HistoryPage() {
     const { address, isConnected } = useAccount();
+    const { connect, connectors } = useConnect();
+    const [showWalletModal, setShowWalletModal] = useState(false);
     const [receivedLinks, setReceivedLinks] = useState([]);
     const [sentPayments, setSentPayments] = useState([]);
     const [activeTab, setActiveTab] = useState('all'); // all, received, pending, expired, sent
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+
+    const handleWalletSelect = (connector) => {
+        connect({ connector });
+        setShowWalletModal(false);
+    };
 
     // Initial loading effect
     useEffect(() => {
@@ -26,6 +34,7 @@ export default function HistoryPage() {
     // Notification State
     const [toasts, setToasts] = useState([]);
     const [showClearModal, setShowClearModal] = useState(false);
+    const [isClearing, setIsClearing] = useState(false);
     const prevReceivedRef = useRef([]);
 
     // Toast Helper
@@ -47,7 +56,7 @@ export default function HistoryPage() {
         const sentLocal = getSentPaymentsByWallet(address);
 
         try {
-            // console.log('🔄 Polling history for:', address); // Commented out to reduce console noise
+            // Polling history for address
             const backendInvoices = await invoiceAPI.getByWallet(address);
 
             const backendReceivedItems = backendInvoices.map(inv => ({
@@ -68,7 +77,13 @@ export default function HistoryPage() {
 
             // Merge Logic (Backend Priority)
             const allReceived = [...receivedLocal, ...backendReceivedItems];
-            const uniqueReceived = Array.from(new Map(allReceived.map(item => [item.id, item])).values());
+            let uniqueReceived = Array.from(new Map(allReceived.map(item => [item.id, item])).values());
+
+            // Filter out blacklisted (locally deleted) items
+            const blacklist = getBlacklist();
+            if (blacklist.length > 0) {
+                uniqueReceived = uniqueReceived.filter(item => !blacklist.includes(item.id));
+            }
 
             // Notification Logic: Check for new 'paid' status
             uniqueReceived.forEach(newItem => {
@@ -129,8 +144,7 @@ export default function HistoryPage() {
         if (item.status === 'paid') return false;
         const created = new Date(Number(item.createdAt)).getTime();
         const now = Date.now();
-        const expirationTime = 24 * 60 * 60 * 1000; // 24h Standard
-        // const expirationTime = 2 * 60 * 1000; // 2min Test
+        const expirationTime = 5 * 60 * 1000; // 5min Test
         return (now - created) > expirationTime;
     };
 
@@ -138,24 +152,37 @@ export default function HistoryPage() {
     const getTimeRemaining = (createdAt) => {
         const created = new Date(Number(createdAt)).getTime();
         const now = Date.now();
-        const expiry = created + (24 * 60 * 60 * 1000); // 24h Standard
-        // const expiry = created + (2 * 60 * 1000); // 2min Test
-        const diff = expiry - now;
+        const expirationTime = 5 * 60 * 1000; // 5min Test
+        const diff = (created + expirationTime) - now;
 
         if (diff <= 0) return 'Expired';
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        return `${hours}h ${minutes}m`;
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000); // Optional: add seconds
+        return minutes > 0 ? `${minutes}m` : `${seconds}s`;
     };
 
     const receivedItems = receivedLinks.map(i => ({ ...i, type: 'received' }));
     const sentItems = sentPayments.map(i => ({ ...i, type: 'sent', status: 'paid' }));
 
-    if (activeTab === 'all') displayedItems = [...receivedItems, ...sentItems];
-    else if (activeTab === 'received') displayedItems = receivedItems.filter(i => i.status === 'paid');
-    else if (activeTab === 'pending') displayedItems = receivedItems.filter(i => i.status === 'pending' && !isExpired(i));
-    else if (activeTab === 'expired') displayedItems = receivedItems.filter(i => i.status === 'pending' && isExpired(i));
-    else if (activeTab === 'sent') displayedItems = sentItems;
+    switch (activeTab) {
+        case 'received':
+            displayedItems = receivedItems.filter(i => i.status === 'paid');
+            break;
+        case 'pending':
+            displayedItems = receivedItems.filter(i => i.status === 'pending' && !isExpired(i));
+            break;
+        case 'expired':
+            displayedItems = receivedItems.filter(i => i.status === 'pending' && isExpired(i));
+            break;
+        case 'sent':
+            displayedItems = sentItems;
+            break;
+        case 'all':
+        default:
+            displayedItems = [...receivedItems, ...sentItems];
+            break;
+    }
 
     // Sort by dates
     displayedItems.sort((a, b) => {
@@ -186,15 +213,17 @@ export default function HistoryPage() {
         }
     };
 
+
+    const [copiedId, setCopiedId] = useState(null);
+
     const copyLink = (id) => {
         const url = `${window.location.origin}/pay/${id}`;
         navigator.clipboard.writeText(url);
-        // Toast removed as per user request
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
     };
 
     const generatePaymentReceipt = (item) => {
-
-        // console.log("Generating receipt for:", item);
         import('../utils/generateReceipt').then(module => {
             module.generatePaymentReceipt(item);
             addToast('Receipt Generated', `Receipt for ${item.recipientName} is ready.`);
@@ -204,7 +233,11 @@ export default function HistoryPage() {
     const handleExportData = () => {
         let exportItems = [];
         // Filter export based on active tab
-        if (activeTab === 'all') exportItems = [...receivedItems, ...sentItems];
+        if (activeTab === 'all') {
+            // Only export COMPLETED transactions (Received Paid + Sent)
+            const paidReceived = receivedItems.filter(i => i.status === 'paid');
+            exportItems = [...paidReceived, ...sentItems];
+        }
         else if (activeTab === 'received') exportItems = receivedItems.filter(i => i.status === 'paid');
         else if (activeTab === 'pending') exportItems = receivedItems.filter(i => i.status === 'pending' && !isExpired(i));
         else if (activeTab === 'expired') exportItems = receivedItems.filter(i => i.status === 'pending' && isExpired(i));
@@ -220,7 +253,12 @@ export default function HistoryPage() {
 
     const handleClearData = async () => {
         try {
+            setIsClearing(true);
             const scope = activeTab; // 'all', 'received', 'pending', 'expired', 'sent'
+
+            // CRITICAL: Sync local storage statuses with current view before deleting
+            // This prevents "Paid" items (which might be 'pending' in local storage) from being deleted as "Expired"
+            syncLocalLinks(receivedLinks);
 
             // Clear Local
             clearPaymentLinksByScope(scope, address);
@@ -232,6 +270,10 @@ export default function HistoryPage() {
             }
 
             addToast('History Cleared', `${scope.toUpperCase()} data has been deleted.`);
+
+            // Notify other components (Navbar badge) to update immediately
+            window.dispatchEvent(new Event('invoice_updated'));
+
             setShowClearModal(false);
 
             setTimeout(() => {
@@ -242,6 +284,8 @@ export default function HistoryPage() {
             console.error('Error clearing history:', error);
             addToast('Error', 'Failed to clear server history.');
             setShowClearModal(false);
+        } finally {
+            setIsClearing(false);
         }
     };
 
@@ -262,13 +306,74 @@ export default function HistoryPage() {
     );
 
     if (!isConnected) return (
-        <section className="flex-1 flex flex-col items-center justify-center p-8 min-h-0 w-full">
-            <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto text-2xl">🔌</div>
-                <h2 className="text-xl font-bold text-white">Connect your wallet</h2>
-                <p className="text-zinc-500">To view your transaction history</p>
-            </div>
-        </section>
+        <>
+            <section className="flex-1 flex flex-col items-center justify-center p-8 min-h-0 w-full relative overflow-hidden">
+                {/* Background Decoration */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+                <div className="relative w-full max-w-md">
+                    {/* Glass Card */}
+                    <div className="relative bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 text-center shadow-2xl overflow-hidden">
+
+                        {/* Glow Gradient Top */}
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+
+                        {/* Icon Container with Animation */}
+                        <div className="relative mb-8 mx-auto w-24 h-24">
+                            <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
+                            <div className="relative w-full h-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full border border-white/10 flex items-center justify-center p-5">
+                                <svg className="w-10 h-10 text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Text Content */}
+                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">
+                            Connect your wallet
+                        </h2>
+                        <p className="text-gray-400 text-base leading-relaxed mb-8">
+                            Connect your wallet to securely access your transaction history, invoices, and payment status.
+                        </p>
+
+                        {/* Action Custom Button */}
+                        <button
+                            onClick={() => setShowWalletModal(true)}
+                            className="group w-full relative py-3.5 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5"
+                        >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                Connect Wallet
+                                <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                            </span>
+                        </button>
+
+                        <div className="mt-6 flex justify-center gap-4 text-xs text-gray-500 font-medium">
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Secure
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                Private
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                Encrypted
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <WalletModal
+                isOpen={showWalletModal}
+                onClose={() => setShowWalletModal(false)}
+                connectors={connectors}
+                onSelectWallet={handleWalletSelect}
+            />
+        </>
     );
 
     return (
@@ -340,17 +445,17 @@ export default function HistoryPage() {
                     {/* Top Pagination Controls */}
                     {totalPages > 1 && (
                         <div className="flex justify-end items-center gap-4 pb-2">
-                            <div className="flex items-center gap-2">
+                            <span className="text-zinc-400 text-xs font-medium">
+                                {currentPage} / {totalPages}
+                            </span>
+                            <div className="flex gap-2">
                                 <button
                                     onClick={() => handlePageChange(currentPage - 1)}
                                     disabled={currentPage === 1}
                                     className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-xs"
                                 >
-                                    Previous
+                                    Prev
                                 </button>
-                                <span className="text-zinc-500 text-xs font-medium">
-                                    {currentPage} / {totalPages}
-                                </span>
                                 <button
                                     onClick={() => handlePageChange(currentPage + 1)}
                                     disabled={currentPage === totalPages}
@@ -376,36 +481,45 @@ export default function HistoryPage() {
                             <p className="text-sm font-medium">No history found</p>
                         </div>
                     ) : (
-                        <div className="grid gap-3">
+                        <div className="grid gap-3" key={activeTab}>
                             {paginatedItems.map(item => (
-                                <div key={item.id} className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-xl p-4">
+                                <div key={item.id} className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-xl p-4 transition-all hover:bg-white/[0.04]">
                                     <div className="flex items-center justify-between gap-4">
 
                                         {/* Left Icon */}
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.type === 'sent' ? 'bg-red-500/10 text-red-400' :
-                                            item.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                (item.status === 'pending' && isExpired(item)) ? 'bg-zinc-800 text-zinc-400' : // Expired Style
-                                                    'bg-amber-500/10 text-amber-400'
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${item.type === 'sent' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                                            item.status === 'paid' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                                (item.status === 'pending' && isExpired(item)) ? 'bg-zinc-800 border-zinc-700 text-zinc-500' :
+                                                    'bg-amber-500/10 border-amber-500/20 text-amber-500'
                                             }`}>
                                             {item.type === 'sent' ? (
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                                </svg>
+                                            ) : item.status === 'paid' ? (
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                                </svg>
+                                            ) : (item.status === 'pending' && isExpired(item)) ? (
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
                                             ) : (
                                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             )}
                                         </div>
 
-                                        {/* Main Content */}
+                                        {/* Main Content - Sent Card Structure for ALL */}
                                         <div className="flex-1 min-w-0">
+                                            {/* Row 1: Name + Badge */}
                                             <div className="flex items-center gap-3 mb-1">
                                                 <h3 className="text-base font-bold text-white truncate">{item.recipientName}</h3>
-                                                <span className={`px-2 py-[2px] rounded text-[10px] font-bold uppercase tracking-wider ${item.type === 'sent' ? 'bg-red-500/10 text-red-500' :
-                                                    item.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                        (item.status === 'pending' && isExpired(item)) ? 'bg-zinc-800 text-zinc-400' :
-                                                            'bg-amber-500/10 text-amber-500'
+                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${item.type === 'sent' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                                                    item.status === 'paid' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                                                        (item.status === 'pending' && isExpired(item)) ? 'bg-zinc-800 text-zinc-500 border border-zinc-700' :
+                                                            'bg-amber-500/10 text-amber-500 border border-amber-500/20'
                                                     }`}>
                                                     {item.type === 'sent' ? 'Sent' :
                                                         item.status === 'paid' ? 'Received' :
@@ -414,32 +528,51 @@ export default function HistoryPage() {
                                                 </span>
                                             </div>
 
+                                            {/* Row 2: Date + Timer (Meta) */}
                                             <div className="flex items-center gap-2 mb-3">
                                                 {item.status === 'pending' && !isExpired(item) && (
                                                     <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
                                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        Expires in: {getTimeRemaining(item.createdAt)}
+                                                        {getTimeRemaining(item.createdAt)}
                                                     </span>
                                                 )}
                                                 <p className="text-zinc-500 text-xs font-medium">
-                                                    {new Date(Number(item.paidAt || item.createdAt)).toLocaleDateString('pt-BR', {
+                                                    {new Date(Number(item.paidAt || item.createdAt)).toLocaleDateString('en-US', {
                                                         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                                                     })}
                                                 </p>
                                             </div>
 
-                                            {/* Action Bar */}
+                                            {/* Row 3: Action Buttons */}
                                             <div className="flex flex-wrap gap-3 items-center">
-                                                {item.status === 'pending' && item.type === 'received' && (
+                                                {/* Copy Link (Pending Received) */}
+                                                {item.status === 'pending' && !isExpired(item) && item.type === 'received' && (
                                                     <button
                                                         onClick={() => copyLink(item.id)}
-                                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-colors text-xs font-bold"
+                                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold ${copiedId === item.id
+                                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                            : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300'
+                                                            }`}
                                                     >
-                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2v1h-4V5z" /></svg>
-                                                        Copy Link
+                                                        {copiedId === item.id ? (
+                                                            <>
+                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                                Copied!
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 20h6a2 2 0 01-2 2h-6a2 2 0 01-2-2v-6a2 2 0 012-2z" />
+                                                                </svg>
+                                                                Copy Link
+                                                            </>
+                                                        )}
                                                     </button>
                                                 )}
 
+                                                {/* Receipt Button */}
                                                 {(item.status === 'paid' || item.type === 'sent') && (
                                                     <button
                                                         onClick={() => generatePaymentReceipt(item)}
@@ -450,6 +583,7 @@ export default function HistoryPage() {
                                                     </button>
                                                 )}
 
+                                                {/* Explorer Link */}
                                                 {item.txHash && (
                                                     <a
                                                         href={`https://testnet.arcscan.app/tx/${item.txHash}`}
@@ -479,6 +613,7 @@ export default function HistoryPage() {
                     )}
 
                     {/* Pagination Controls */}
+
                     {totalPages > 1 && (
                         <div className="flex justify-center items-center gap-4 mt-8 pb-4">
                             <button
@@ -501,15 +636,20 @@ export default function HistoryPage() {
                         </div>
                     )}
 
+
                     {/* Admin Controls (Bottom) */}
                     <div className="flex justify-center gap-4 mt-8 pt-4 border-t border-white/5 pb-4">
-                        <button
-                            onClick={handleExportData}
-                            className="px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 text-sm font-bold transition-colors flex items-center gap-2"
-                        >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            BACKUP PDF
-                        </button>
+                        {/* Only allow Backup for Paid/Sent items (Best Practice) */}
+                        {/* Only allow Backup for Paid/Sent items (Best Practice) */}
+                        {(activeTab === 'received' || activeTab === 'sent') && (
+                            <button
+                                onClick={handleExportData}
+                                className="px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 text-sm font-bold transition-colors flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                DOWNLOAD RECEIPTS
+                            </button>
+                        )}
 
                         <button
                             onClick={() => setShowClearModal(true)}
@@ -583,26 +723,37 @@ export default function HistoryPage() {
                                 </div>
 
                                 <div className="flex flex-col gap-3 w-full">
-                                    <button
-                                        onClick={handleExportData}
-                                        className="w-full py-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-bold text-sm border border-blue-500/20 flex items-center justify-center gap-2"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                        Download Backup (Full PDF)
-                                    </button>
+                                    {(activeTab === 'received' || activeTab === 'sent') && (
+                                        <button
+                                            onClick={handleExportData}
+                                            className="w-full py-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-bold text-sm border border-blue-500/20 flex items-center justify-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                            Download Receipts (PDF)
+                                        </button>
+                                    )}
 
                                     <div className="flex gap-3 w-full">
                                         <button
                                             onClick={() => setShowClearModal(false)}
-                                            className="flex-1 py-3 rounded-xl bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-sm"
+                                            disabled={isClearing}
+                                            className="flex-1 py-3 rounded-xl bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             onClick={handleClearData}
-                                            className="flex-1 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold text-sm shadow-lg shadow-red-500/20"
+                                            disabled={isClearing}
+                                            className="flex-1 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 font-bold text-sm shadow-lg shadow-red-500/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
-                                            Delete {activeTab === 'all' ? 'All' : activeTab}
+                                            {isClearing ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                `Delete ${activeTab === 'all' ? 'All' : activeTab}`
+                                            )}
                                         </button>
                                     </div>
                                 </div>

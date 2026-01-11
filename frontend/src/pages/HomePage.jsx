@@ -13,7 +13,7 @@ export default function HomePage() {
           className={`space-y-6 lg:space-y-8 transition-all duration-700 ease-in-out opacity-0 animate-[fadeIn_0.8s_ease-out_forwards] mt-8 lg:mt-12
             ${isConnected
               ? 'w-0 opacity-0 -translate-x-20 overflow-hidden pointer-events-none scale-90 blur-lg'
-              : 'w-full lg:w-5/12 opacity-100 translate-x-0 scale-100 blur-0'
+              : 'w-full lg:w-6/12 opacity-100 translate-x-0 scale-100 blur-0'
             }`}
         >
           {/* Título */}
@@ -21,7 +21,7 @@ export default function HomePage() {
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-none text-white drop-shadow-2xl">
               Receive instant
               <span className="block text-white">payments</span>
-              <span className="gradient-text block mt-2 whitespace-nowrap">in USDC & EURC (V2)</span>
+              <span className="gradient-text block mt-2 whitespace-nowrap pr-4 pb-2">in USDC & EURC</span>
             </h1>
 
             <p className="text-lg md:text-xl text-gray-400 leading-relaxed lg:max-w-2xl transition-all">
@@ -48,7 +48,7 @@ export default function HomePage() {
 
         {/* Coluna Direita - Formulário */}
         <div className={`flex justify-center transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] opacity-0 animate-[fadeIn_0.8s_ease-out_0.2s_forwards]
-          ${isConnected ? 'w-full' : 'w-full lg:w-7/12 lg:justify-end'}`}>
+          ${isConnected ? 'w-full' : 'w-full lg:w-6/12 lg:justify-end'}`}>
 
           <div className="w-full max-w-xl relative">
             {/* Glow Effect */}

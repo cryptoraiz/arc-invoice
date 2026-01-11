@@ -2,7 +2,7 @@
  * API Service for Invoice Management
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://arc-invoice-backend.vercel.app';
 
 export const invoiceAPI = {
     /**
@@ -80,7 +80,7 @@ export const invoiceAPI = {
             return data.invoice || null;
         } catch (error) {
             console.error('Error fetching invoice by ID:', error);
-            return null;
+            throw error; // Propagate error to caller
         }
     },
 

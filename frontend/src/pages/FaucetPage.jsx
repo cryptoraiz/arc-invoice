@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { arcTestnet } from '../config/wagmi'
 
 import confetti from 'canvas-confetti'
+import WalletModal from '../components/ui/WalletModal'
+import { useConnect } from 'wagmi'
 
 const FAUCET_API_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/faucet` : 'http://localhost:5000/api/faucet';
 
@@ -11,6 +13,13 @@ export default function FaucetPage() {
     const { address, isConnected } = useAccount()
     const chainId = useChainId()
     const { switchChain } = useSwitchChain()
+    const { connect, connectors } = useConnect()
+
+    const [isWalletModalOpen, setIsWalletModalOpen] = useState(false)
+    const handleWalletSelect = (connector) => {
+        connect({ connector })
+        setIsWalletModalOpen(false)
+    }
 
 
     const [isLoading, setIsLoading] = useState(false)
@@ -185,7 +194,7 @@ export default function FaucetPage() {
             try {
                 switchChain({ chainId: arcTestnet.id })
             } catch (e) {
-                toast.error("Erro ao trocar de rede. Troque manualmente.")
+                toast.error("Error switching network. Please switch manually.")
                 return;
             }
         }
@@ -295,7 +304,7 @@ export default function FaucetPage() {
                         {/* Claim Button */}
                         {!isConnected ? (
                             <button
-                                onClick={() => { /* Open wallet modal logic would go here if available, relying on wagmi state usually */ }}
+                                onClick={() => setIsWalletModalOpen(true)}
                                 className="w-full py-4 rounded-xl gradient-button font-bold text-lg text-white shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-3"
                             >
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -420,8 +429,44 @@ export default function FaucetPage() {
                             )}
                         </div>
                     </div>
+
                 </div>
             )}
+
+            {/* Strategic Alternative Faucet Option */}
+            <div className="mt-8 flex justify-center w-full relative z-10">
+                <a
+                    href="https://faucet.circle.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between gap-4 px-6 py-4 rounded-2xl bg-[#0F1115] border border-white/5 hover:border-cyan-500/30 hover:bg-white/5 transition-all w-full max-w-sm shadow-lg hover:shadow-cyan-500/10"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-cyan-900/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div className="text-left">
+                            <p className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">Official Circle Faucet</p>
+                            <p className="text-xs text-zinc-500">Alternative request method</p>
+                        </div>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/5 text-zinc-400 group-hover:text-white transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </div>
+                </a>
+            </div>
+
+
+            <WalletModal
+                isOpen={isWalletModalOpen}
+                onClose={() => setIsWalletModalOpen(false)}
+                connectors={connectors}
+                onSelectWallet={handleWalletSelect}
+            />
         </section>
     )
 }

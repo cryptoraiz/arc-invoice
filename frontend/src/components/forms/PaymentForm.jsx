@@ -5,10 +5,12 @@ import CurrencySelect from '../ui/CurrencySelect'
 import { savePaymentLink } from '../../utils/localStorage'
 import { invoiceAPI } from '../../services/invoiceService'
 import { toast } from 'sonner'
+import WalletModal from '../ui/WalletModal'
 
 export default function PaymentForm({ theme = 'modern' }) {
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false)
 
   // State
   const [formData, setFormData] = useState({
@@ -53,6 +55,18 @@ export default function PaymentForm({ theme = 'modern' }) {
     })
   }
 
+  // Currency Mask Handler
+  const handleAmountChange = (e) => {
+    let value = e.target.value.replace(/\D/g, '')
+    if (!value) {
+      setFormData({ ...formData, amount: '' })
+      return
+    }
+    const floatVal = parseInt(value, 10) / 100
+    const formatted = floatVal.toFixed(2)
+    setFormData({ ...formData, amount: formatted })
+  }
+
   // Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -75,30 +89,46 @@ export default function PaymentForm({ theme = 'modern' }) {
       // Save locally
       savePaymentLink(linkData)
 
-      // Save to backend (if available) - Silent fail if backend down
-      try {
-        await invoiceAPI.create(linkData)
-      } catch (err) {
-        console.warn('Backend sync failed, using local only', err)
+      // Save to backend
+      // Save to backend (Strict: Must succeed)
+      const backendPayload = {
+        id: newId,
+        fromWallet: address,
+        toWallet: formData.wallet,
+        recipientName: formData.name,
+        amount: formData.amount,
+        currency: formData.currency,
+        description: formData.description
       }
+
+      // If this fails, it jumps to the catch block below and DOES NOT show success
+      await invoiceAPI.create(backendPayload)
 
       // Generate Link
       const linkUrl = `${window.location.origin}/pay/${newId}`
       setGeneratedLink(linkUrl)
       setGeneratedLinkId(newId)
+
+      // Notify other components (Navbar badge) to update immediately
+      window.dispatchEvent(new Event('invoice_updated'));
+
       toast.success('Payment Link Created!')
 
     } catch (error) {
       console.error(error)
-      toast.error('Error creating link')
+      // Differentiate between Wallet errors and Server errors if possible
+      if (error.message && error.message.includes('HTTP error')) {
+        toast.error('Server Unreachable: Cold not save invoice online.')
+      } else {
+        toast.error('Error creating link: ' + (error.message || 'Unknown error'))
+      }
     }
   }
 
-  // Copy Clipboard
+  // Copy Handler without Toast
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedLink)
     setIsCopied(true)
-    toast.success('Copied to clipboard!')
     setTimeout(() => setIsCopied(false), 2000)
   }
 
@@ -139,6 +169,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                autoComplete="off"
               />
               <label htmlFor="name" className={`label-float top-1/2 -translate-y-1/2 text-xs ${styles.label}`}>
                 Name or Business
@@ -192,11 +223,9 @@ export default function PaymentForm({ theme = 'modern' }) {
                     placeholder=" "
                     id="amount"
                     value={formData.amount}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9.]/g, '')
-                      setFormData({ ...formData, amount: val })
-                    }}
+                    onChange={handleAmountChange}
                     required
+                    autoComplete="off"
                   />
                   <label htmlFor="amount" className={`label-float top-1/2 -translate-y-1/2 text-xs ${styles.label}`} style={{ left: '32px' }}>
                     Enter amount
@@ -213,7 +242,7 @@ export default function PaymentForm({ theme = 'modern' }) {
               />
             </div>
 
-            {/* Taxa Info */}
+            {/* Fee Info */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/20">
               <span className="text-green-400 font-bold text-sm">✓</span>
               <span className="text-sm text-green-400">Fee &lt; $0.01 • Instant</span>
@@ -228,6 +257,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                autoComplete="off"
               ></textarea>
               <label htmlFor="description" className={`label-float top-3 text-xs ${styles.label}`}>
                 Description (optional)
@@ -239,10 +269,7 @@ export default function PaymentForm({ theme = 'modern' }) {
               type={isConnected ? "submit" : "button"}
               onClick={!isConnected ? (e) => {
                 e.preventDefault();
-                const injectedConnector = connectors.find(c => c.id === 'injected') || connectors[0]
-                if (injectedConnector) {
-                  connect({ connector: injectedConnector })
-                }
+                setIsWalletModalOpen(true);
               } : undefined}
               className={`relative overflow-hidden w-full px-6 py-4 rounded-xl font-bold text-lg text-white flex items-center justify-center gap-2 transition-all ${isConnected
                 ? 'gradient-button shadow-[0_4px_20px_rgba(37,99,235,0.3)] hover:shadow-[0_4px_30px_rgba(37,99,235,0.5)]'
@@ -277,22 +304,35 @@ export default function PaymentForm({ theme = 'modern' }) {
                     <span className="flex-1 text-sm font-mono truncate text-cyan-400">{generatedLink}</span>
                     <button
                       onClick={copyToClipboard}
-                      className="p-2 rounded-md transition-colors relative group/copy hover:bg-white/10 text-white"
-                      title={isCopied ? "Copied!" : "Copy"}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold ${isCopied
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                        }`}
                     >
-                      {isCopied ? '✅' : '📋'}
-                      {/* Tooltip inline */}
-                      <span className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-1 rounded transition-opacity whitespace-nowrap ${isCopied ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                        Copied!
-                      </span>
+                      {isCopied ? (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 20h6a2 2 0 012 2v6a2 2 0 01-2 2h-6a2 2 0 01-2-2v-6a2 2 0 012-2z" />
+                          </svg>
+                          Copy
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Share Options - Order: Whatsapp > Telegram > Gmail */}
+            {/* Share Options */}
             <div className="grid grid-cols-3 gap-3">
+              {/* WhatsApp */}
               <a
                 href={`https://wa.me/?text=${encodeURIComponent(`Arc Invoice Payment Link:\n${generatedLink}`)}`}
                 target="_blank"
@@ -304,7 +344,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 </div>
                 <span className="text-[10px] uppercase font-bold text-[#25D366]">WhatsApp</span>
               </a >
-
+              {/* Telegram */}
               <a
                 href={`https://t.me/share/url?url=${encodeURIComponent(generatedLink)}&text=${encodeURIComponent('Arc Invoice Payment')}`}
                 target="_blank"
@@ -316,7 +356,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 </div>
                 <span className="text-[10px] uppercase font-bold text-[#0088cc]">Telegram</span>
               </a>
-
+              {/* Gmail */}
               <a
                 href={`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent('Arc Invoice Receipt')}&body=${encodeURIComponent(`Here is your payment link via Arc Invoice: ${generatedLink}`)}`}
                 target="_blank"
@@ -328,14 +368,14 @@ export default function PaymentForm({ theme = 'modern' }) {
                 </div>
                 <span className="text-[10px] uppercase font-bold text-red-500">Gmail</span>
               </a>
-            </div >
+            </div>
 
-            {/* Nova Cobrança Button */}
+            {/* New Invoice Button */}
             <button
               onClick={() => {
                 setFormData({
                   name: '',
-                  wallet: '',
+                  wallet: address || '', // Keep current wallet if connected
                   amount: '',
                   currency: 'USDC',
                   description: '',
@@ -350,11 +390,20 @@ export default function PaymentForm({ theme = 'modern' }) {
           </div>
         )}
       </div>
+
+      <WalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        connectors={connectors}
+        onSelectWallet={(connector) => {
+          connect({ connector })
+          setIsWalletModalOpen(false)
+        }}
+      />
     </div>
   )
 }
 
-// Helper
 function getCurrencySymbol(currency) {
   if (currency === 'EURC') return '€'
   return '$'
