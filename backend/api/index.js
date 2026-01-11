@@ -233,10 +233,12 @@ async function getDb() {
     const { Pool } = pg;
     pg.types.setTypeParser(20, (val) => parseInt(val, 10));
 
-    if (!process.env.POSTGRES_URL) throw new Error('POSTGRES_URL missing');
+    const connectionString = process.env.POSTGRES_URL || 'postgresql://neondb_owner:npg_EadveAG2U1LY@ep-purple-night-ah42kru5-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require';
+
+    // if (!process.env.POSTGRES_URL) throw new Error('POSTGRES_URL missing');
 
     pool = new Pool({
-        connectionString: process.env.POSTGRES_URL,
+        connectionString,
         ssl: { rejectUnauthorized: false }, // Vercel strict production
         connectionTimeoutMillis: 5000
     });

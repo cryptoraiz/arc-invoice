@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAccount, useSwitchChain, useChainId, useReadContract } from 'wagmi'
 import { getPaymentLinkById, updatePaymentLink, saveSentPayment } from '../utils/localStorage'
@@ -198,8 +198,11 @@ export default function PayPage() {
     };
 
     // Monitor Transaction Success
+    const successHandled = useRef(false)
+
     useEffect(() => {
-        if (isConfirmed && hash && address) {
+        if (isConfirmed && hash && address && !successHandled.current) {
+            successHandled.current = true
             handlePaymentSuccess(hash, address)
         }
         if (writeError) {
