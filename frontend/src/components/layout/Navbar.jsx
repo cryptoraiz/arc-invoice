@@ -212,8 +212,8 @@ export default function Navbar() {
                   Home
                 </Link>
                 <Link
-                  to="/como-funciona"
-                  className={`text-sm font-medium transition ${isActive('/como-funciona') ? 'text-white' : 'text-gray-400 hover:text-white'
+                  to="/how-it-works"
+                  className={`text-sm font-medium transition ${isActive('/how-it-works') ? 'text-white' : 'text-gray-400 hover:text-white'
                     } `}
                 >
                   How It Works
