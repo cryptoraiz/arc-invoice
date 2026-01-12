@@ -459,7 +459,7 @@ export default function PayPage() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Status:</span>
-                                    <span className="text-green-400 font-bold">Confirmado</span>
+                                    <span className="text-green-400 font-bold">Confirmed</span>
                                 </div>
                             </div>
 
@@ -615,7 +615,7 @@ export default function PayPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Left Column - Payment Details */}
                             <div className="space-y-4">
-                                {/* Valor */}
+                                {/* Amount */}
                                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 text-center">
                                     <p className="text-xs text-gray-400 mb-0.5">Amount to pay</p>
                                     <div className="text-4xl font-black text-emerald-500">
@@ -624,7 +624,7 @@ export default function PayPage() {
                                     <p className="text-xs text-gray-500 mt-0.5">{paymentData.currency}</p>
                                 </div>
 
-                                {/* Descrição */}
+                                {/* Description */}
                                 {paymentData.description && (
                                     <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
                                         <p className="text-xs text-gray-400 mb-0.5">Description</p>
