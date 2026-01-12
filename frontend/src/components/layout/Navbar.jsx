@@ -137,7 +137,7 @@ export default function Navbar() {
       try {
         await switchChain({ chainId: arcTestnet.id })
         // console.log('✅ Auto-Switch successful!')
-        // toast.success('Rede alterada com sucesso!')
+        // toast.success('Network switched successfully!')
       } catch (err) {
         console.warn(`⚠️ Auto - Switch Error(Attempt ${retryCount + 1}): `, err)
 

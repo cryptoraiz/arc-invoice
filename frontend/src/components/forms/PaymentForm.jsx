@@ -159,7 +159,7 @@ export default function PaymentForm({ theme = 'modern' }) {
         {!generatedLink ? (
           /* FORM VIEW */
           <form onSubmit={handleSubmit} className="space-y-4 animate-[slideDown_0.3s_ease-out]">
-            {/* Nome */}
+            {/* Name */}
             <div className="input-group">
               <input
                 type="text"
