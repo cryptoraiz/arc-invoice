@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import IllustrationModal from '../components/ui/IllustrationModal'
 
 export default function ComoFuncionaPage() {
   const [showIllustration, setShowIllustration] = useState(false)
 
   return (
     <section className="flex-1 flex items-center justify-center p-4 md:p-6 h-full min-h-0">
-      <IllustrationModal isOpen={showIllustration} onClose={() => setShowIllustration(false)} />
 
       <div className="w-full max-w-7xl mx-auto space-y-8 h-full flex flex-col justify-center">
         {/* Hero Compacto */}
@@ -17,21 +15,6 @@ export default function ComoFuncionaPage() {
             <div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
               <span className="text-xs font-semibold text-blue-400">How It Works</span>
             </div>
-
-            {/* Illustration Button with Arrow (Disabled for Release) */}
-            {/* <div className="relative group">
-              <div className="absolute -right-14 top-1/2 -translate-y-1/2 hidden md:block animate-pulse">
-                <svg className="w-8 h-8 text-yellow-500 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </div>
-              <button
-                onClick={() => setShowIllustration(true)}
-                className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors cursor-pointer group"
-              >
-                <span className="text-xs font-bold text-yellow-400 group-hover:text-yellow-300">💡 Illustration</span>
-              </button>
-            </div> */}
           </div>
 
           <h1 className="relative text-4xl md:text-5xl font-black">

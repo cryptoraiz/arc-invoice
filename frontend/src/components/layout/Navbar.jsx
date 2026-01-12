@@ -230,7 +230,7 @@ export default function Navbar() {
                   className={`text-sm font-medium transition relative ${isActive('/activity') ? 'text-white' : 'text-gray-400 hover:text-white'
                     } `}
                 >
-                  Activity ⚡
+                  Activity
                   {notificationCount > 0 && (
                     <span className="relative group/notify">
                       {/* Badge Circle */}
