@@ -69,7 +69,7 @@ export default function FAQPage() {
           </h1>
         </div>
 
-        {/* FAQs em Coluna Única */}
+        {/* FAQs in Single Column */}
         <div
           ref={faqContainerRef}
           className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent opacity-0 animate-[slideDown_0.5s_ease-out_0.2s_forwards] space-y-4 max-w-3xl mx-auto w-full"

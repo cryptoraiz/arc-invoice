@@ -199,7 +199,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 )}
               </div>
 
-              {/* Mensagem de Erro/Validação */}
+              {/* Error/Validation Message */}
               {formData.wallet && !/^0x[a-fA-F0-9]{40}$/.test(formData.wallet) && (
                 <div className="absolute -bottom-5 left-0 text-xs text-red-400 font-medium ml-4 flex items-center gap-1">
                   <span>⚠️ Invalid Address</span>
@@ -233,7 +233,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 </div>
               </div>
 
-              {/* Moeda - Select Customizado */}
+              {/* Currency - Custom Select */}
               <CurrencySelect
                 value={formData.currency}
                 onChange={(value) => setFormData({ ...formData, currency: value })}
@@ -264,7 +264,7 @@ export default function PaymentForm({ theme = 'modern' }) {
               </label>
             </div>
 
-            {/* Botão Submit / Connect */}
+            {/* Submit / Connect Button */}
             <button
               type={isConnected ? "submit" : "button"}
               onClick={!isConnected ? (e) => {

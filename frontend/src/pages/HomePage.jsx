@@ -8,7 +8,7 @@ export default function HomePage() {
     <section className="flex-1 flex flex-col items-center justify-start pt-16 md:pt-24 lg:pt-20 w-full">
       <div className="flex flex-col lg:flex-row items-center lg:items-start w-full max-w-7xl mx-auto px-6 gap-10 lg:gap-16 transition-all duration-700">
 
-        {/* Coluna Esquerda - Hero (Animada) */}
+        {/* Left Column - Hero (Animated) */}
         <div
           className={`space-y-6 lg:space-y-8 transition-all duration-700 ease-in-out opacity-0 animate-[fadeIn_0.8s_ease-out_forwards] mt-8 lg:mt-12
             ${isConnected
@@ -46,7 +46,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Coluna Direita - Formulário */}
+        {/* Right Column - Form */}
         <div className={`flex justify-center transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] opacity-0 animate-[fadeIn_0.8s_ease-out_0.2s_forwards]
           ${isConnected ? 'w-full' : 'w-full lg:w-6/12 lg:justify-end'}`}>
 

@@ -260,7 +260,7 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Botões Direita */}
+            {/* Right Buttons */}
             <div className="flex items-center gap-3">
               {/* Faucet Button */}
               <div className="relative">
