@@ -116,8 +116,8 @@ export const clearPaymentLinksByScope = (scope = 'all', walletAddress) => {
                 if (link.status === 'pending' && isRecent) shouldDelete = true;
             }
             if (scope === 'expired') {
-                // Delete if pending AND created >= 5 minutes ago (Standard expiration for demo/dev)
-                const isOld = (Date.now() - link.createdAt) >= (5 * 60 * 1000);
+                // Delete if pending AND created >= 24 hours ago
+                const isOld = (Date.now() - link.createdAt) >= (24 * 60 * 60 * 1000);
                 if (link.status === 'pending' && isOld) shouldDelete = true;
             }
             if (scope === 'received') {

@@ -94,7 +94,7 @@ export default function PayPage() {
                     if (data.status !== 'paid') {
                         const created = new Date(Number(data.createdAt)).getTime();
                         const now = Date.now();
-                        const expiry = created + (5 * 60 * 1000); // 5min Test
+                        const expiry = created + (24 * 60 * 60 * 1000); // 24h Production expiration
                         const diff = expiry - now;
 
                         if (diff <= 0) {
