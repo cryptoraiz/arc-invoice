@@ -170,6 +170,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 autoComplete="off"
+                spellCheck="false"
               />
               <label htmlFor="name" className={`label-float top-1/2 -translate-y-1/2 text-xs ${styles.label}`}>
                 Name or Business
@@ -226,6 +227,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                     onChange={handleAmountChange}
                     required
                     autoComplete="off"
+                    spellCheck="false"
                   />
                   <label htmlFor="amount" className={`label-float top-1/2 -translate-y-1/2 text-xs ${styles.label}`} style={{ left: '32px' }}>
                     Enter amount
@@ -258,6 +260,7 @@ export default function PaymentForm({ theme = 'modern' }) {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 autoComplete="off"
+                spellCheck="false"
               ></textarea>
               <label htmlFor="description" className={`label-float top-3 text-xs ${styles.label}`}>
                 Description (optional)
