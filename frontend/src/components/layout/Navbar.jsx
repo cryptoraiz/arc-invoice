@@ -113,7 +113,7 @@ export default function Navbar() {
         return
       }
 
-      // chainId foi detectado, verificar se precisa trocar
+      // chainId detected, check if switching is needed
       if (realChainId === arcTestnet.id) {
         return
       }

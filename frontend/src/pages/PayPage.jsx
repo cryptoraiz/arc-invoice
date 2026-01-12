@@ -273,11 +273,11 @@ export default function PayPage() {
 
             const msg = err.message?.toLowerCase() || '';
             if (msg.includes('insufficient funds') || msg.includes('exceeds balance')) {
-                toast.error("⚠️ Saldo Insuficiente (Token + Gás)");
+                toast.error("⚠️ Insufficient Balance (Token + Gas)");
             } else if (msg.includes('rejected')) {
-                toast.info("Transação cancelada");
+                toast.info("Transaction canceled");
             } else {
-                toast.error("Erro: " + (err.shortMessage || "Falha na transação"));
+                toast.error("Error: " + (err.shortMessage || "Transaction failed"));
             }
         }
     }
@@ -359,7 +359,7 @@ export default function PayPage() {
                         {/* Guidance - Secondary */}
                         <div className="space-y-4 pt-4 border-t border-white/5">
                             <p className="text-gray-200 text-sm font-medium">
-                                O que fazer agora?
+                                What to do now?
                             </p>
                             <p className="text-gray-300 text-xs px-2 leading-relaxed">
                                 Request a new link from whoever sent you this invoice.
