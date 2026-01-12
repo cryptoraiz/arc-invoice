@@ -208,9 +208,9 @@ export default function PaymentForm({ theme = 'modern' }) {
               )}
             </div>
 
-            {/* Valor + Moeda */}
+            {/* Amount + Currency */}
             <div className="grid gap-3 items-start" style={{ gridTemplateColumns: '1.2fr 1fr' }}>
-              {/* Valor */}
+              {/* Amount */}
               <div className="input-group">
                 <div className="relative">
                   <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-lg ${styles.icon}`}>
@@ -248,7 +248,7 @@ export default function PaymentForm({ theme = 'modern' }) {
               <span className="text-sm text-green-400">Fee &lt; $0.01 • Instant</span>
             </div>
 
-            {/* Descrição */}
+            {/* Description */}
             <div className="input-group">
               <textarea
                 className={`input-float resize-none py-3 text-sm ${styles.inputBg}`}

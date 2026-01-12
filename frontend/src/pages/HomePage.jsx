@@ -16,7 +16,7 @@ export default function HomePage() {
               : 'w-full lg:w-6/12 opacity-100 translate-x-0 scale-100 blur-0'
             }`}
         >
-          {/* Título */}
+          {/* Title */}
           <div className="space-y-4 min-w-[300px]">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-none text-white drop-shadow-2xl">
               Receive instant

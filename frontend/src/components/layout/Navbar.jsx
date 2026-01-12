@@ -141,13 +141,13 @@ export default function Navbar() {
       } catch (err) {
         console.warn(`⚠️ Auto - Switch Error(Attempt ${retryCount + 1}): `, err)
 
-        // Ignora rejeição do usuário
+        // Ignore user rejection
         if (err.code === 4001 || err.message?.includes('rejected')) {
           // console.log('❌ User rejected network switch')
           return
         }
 
-        // Fallback para Raw Switch na última tentativa
+        // Fallback to Raw Switch on last attempt
         if (retryCount >= maxRetries) {
           // console.log("🔧 Tentando Fallback Raw Switch...")
           const success = await attemptRawSwitch()
@@ -156,7 +156,7 @@ export default function Navbar() {
           }
         } else {
           retryCount++
-          // console.log(`⏳ Aguardando 1.5s para próxima tentativa...`)
+          // console.log(`⏳ Waiting 1.5s for next attempt...`)
           setTimeout(attemptSwitch, 1500)
         }
       }

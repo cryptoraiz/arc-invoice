@@ -12,7 +12,7 @@ import { parseUnits, formatUnits } from 'viem'
 import { ERC20_ABI } from '../utils/abis'
 import { arcTestnet } from '../config/wagmi'
 
-// Endereços Oficiais Arc Testnet
+// Official Arc Testnet Addresses
 const USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
 const EURC_ADDRESS = "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a";
 
@@ -208,10 +208,10 @@ export default function PayPage() {
         if (writeError) {
             setIsPaying(false)
 
-            // Silenciar erro de rejeição do usuário
+            // Silence user rejection error
             if (writeError.message?.toLowerCase().includes('user rejected') ||
                 writeError.shortMessage?.toLowerCase().includes('user rejected')) {
-                // console.log("Transação cancelada pelo usuário")
+                // console.log("Transaction canceled by user")
                 return
             }
 
@@ -244,7 +244,7 @@ export default function PayPage() {
         // Check if on correct network
         if (chainId !== arcTestnet.id) {
             try {
-                toast.info('Trocando para Arc Testnet...')
+                toast.info('Switching to Arc Testnet...')
                 await switchChain({ chainId: arcTestnet.id })
             } catch (err) {
                 toast.error('You need to be on Arc Testnet to pay')
@@ -450,11 +450,11 @@ export default function PayPage() {
 
                             <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5 text-xs">
                                 <div className="flex justify-between">
-                                    <span className="text-gray-400">Valor:</span>
+                                    <span className="text-gray-400">Amount:</span>
                                     <span className="font-bold">{paymentData.amount} {paymentData.currency}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-400">Para:</span>
+                                    <span className="text-gray-400">To:</span>
                                     <span className="font-bold">{paymentData.recipientName}</span>
                                 </div>
                                 <div className="flex justify-between">
@@ -656,7 +656,7 @@ export default function PayPage() {
                                         {/* Switch Network Button */}
                                         <button
                                             onClick={() => {
-                                                toast.info('Trocando para Arc Testnet...')
+                                                toast.info('Switching to Arc Testnet...')
                                                 switchChain({ chainId: arcTestnet.id }).catch(err => {
                                                     console.error('Error switching network:', err)
                                                     toast.error('Error switching network')
