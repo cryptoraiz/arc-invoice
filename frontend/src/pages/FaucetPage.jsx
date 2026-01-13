@@ -310,17 +310,6 @@ export default function FaucetPage() {
                 <div className="relative">
                     <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 space-y-5">
 
-                        {/* Turnstile Widget */}
-                        <div className="flex justify-center py-2 h-[80px]">
-                            <Turnstile
-                                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                                onSuccess={setTurnstileToken}
-                                onError={() => setErrorMsg("Security check failed. Please reload.")}
-                                onExpire={() => setTurnstileToken(null)}
-                                options={{ theme: 'dark' }}
-                            />
-                        </div>
-
                         {/* Claim Button */}
                         {!isConnected ? (
                             <button
@@ -341,6 +330,17 @@ export default function FaucetPage() {
                                             {address}
                                         </span>
                                     </div>
+                                </div>
+
+                                {/* Turnstile Widget - Only show when connected */}
+                                <div className="flex justify-center py-2 h-[80px]">
+                                    <Turnstile
+                                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                                        onSuccess={setTurnstileToken}
+                                        onError={() => setErrorMsg("Security check failed. Please reload.")}
+                                        onExpire={() => setTurnstileToken(null)}
+                                        options={{ theme: 'dark' }}
+                                    />
                                 </div>
 
                                 <button
