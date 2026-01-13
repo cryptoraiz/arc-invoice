@@ -334,14 +334,16 @@ export default function FaucetPage() {
 
                                 {/* Turnstile Widget - Only show when connected AND eligible (no cooldown) */}
                                 {(effectiveTimeLeft <= 0) && (
-                                    <div className="flex justify-center py-2 h-[80px]">
-                                        <Turnstile
-                                            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                                            onSuccess={setTurnstileToken}
-                                            onError={() => setErrorMsg("Security check failed. Please reload.")}
-                                            onExpire={() => setTurnstileToken(null)}
-                                            options={{ theme: 'dark' }}
-                                        />
+                                    <div className="flex justify-center">
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-2 backdrop-blur-sm shadow-inner shadow-black/20">
+                                            <Turnstile
+                                                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                                                onSuccess={setTurnstileToken}
+                                                onError={() => setErrorMsg("Security check failed. Please reload.")}
+                                                onExpire={() => setTurnstileToken(null)}
+                                                options={{ theme: 'dark' }}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
