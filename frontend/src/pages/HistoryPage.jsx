@@ -144,7 +144,7 @@ export default function HistoryPage() {
         if (item.status === 'paid') return false;
         const created = new Date(Number(item.createdAt)).getTime();
         const now = Date.now();
-        const expirationTime = 5 * 60 * 1000; // 5min Test
+        const expirationTime = 24 * 60 * 60 * 1000; // 24h Production expiration
         return (now - created) > expirationTime;
     };
 
@@ -152,14 +152,13 @@ export default function HistoryPage() {
     const getTimeRemaining = (createdAt) => {
         const created = new Date(Number(createdAt)).getTime();
         const now = Date.now();
-        const expirationTime = 5 * 60 * 1000; // 5min Test
+        const expirationTime = 24 * 60 * 60 * 1000; // 24h Production expiration
         const diff = (created + expirationTime) - now;
 
         if (diff <= 0) return 'Expired';
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000); // Optional: add seconds
-        return minutes > 0 ? `${minutes}m` : `${seconds}s`;
+        return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
     };
 
     const receivedItems = receivedLinks.map(i => ({ ...i, type: 'received' }));
