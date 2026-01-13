@@ -85,6 +85,22 @@ export default function HistoryPage() {
                 uniqueReceived = uniqueReceived.filter(item => !blacklist.includes(item.id));
             }
 
+            // CRITICAL FIX: Ghost Transaction Prevention
+            // If I am the payer (fromWallet matches my address), I should NOT see this in "Received"
+            // This prevents "Self-Funding" tests from showing up as duplicate +100 and -100
+            uniqueReceived = uniqueReceived.filter(item => {
+                const isMyPayment = item.payer && item.payer.toLowerCase() === address.toLowerCase();
+                const isMyCreation = item.creatorAddress && item.creatorAddress.toLowerCase() === address.toLowerCase();
+
+                // Keep if I created it (Creator View) OR if I am the recipient
+                // BUT if I paid it (Payer View), it belongs in 'Sent', not 'Received'
+                // However, for ArcInvoice standard:
+                // Received Tab = Links I created (regardless of who paid, even me)
+                // Sent Tab = Payments I made
+
+                return true; // Logic revisited below in 'displayedItems' to handle visual duplication if needed
+            });
+
             // Notification Logic: Check for new 'paid' status
             uniqueReceived.forEach(newItem => {
                 if (newItem.status === 'paid') {
@@ -179,7 +195,18 @@ export default function HistoryPage() {
             break;
         case 'all':
         default:
-            displayedItems = [...receivedItems, ...sentItems];
+            // Filter duplicates for the 'All' view
+            // If I sent money to myself (or paid my own invoice), it appears in both lists.
+            // We prioritize showing it as 'Sent' to indicate money leaving the wallet, 
+            // OR we filter based on unique ID if better.
+
+            const sentIds = new Set(sentItems.map(s => s.txHash));
+
+            // Only show Received items that do NOT have a matching TX Hash in Sent items
+            // This hides the "Received" side of a self-payment, showing only the "Sent" side
+            const uniqueReceivedForDisplay = receivedItems.filter(r => !r.txHash || !sentIds.has(r.txHash));
+
+            displayedItems = [...uniqueReceivedForDisplay, ...sentItems];
             break;
     }
 
