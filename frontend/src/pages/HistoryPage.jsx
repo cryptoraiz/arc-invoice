@@ -195,18 +195,10 @@ export default function HistoryPage() {
             break;
         case 'all':
         default:
-            // Filter duplicates for the 'All' view
-            // If I sent money to myself (or paid my own invoice), it appears in both lists.
-            // We prioritize showing it as 'Sent' to indicate money leaving the wallet, 
-            // OR we filter based on unique ID if better.
-
-            const sentIds = new Set(sentItems.map(s => s.txHash));
-
-            // Only show Received items that do NOT have a matching TX Hash in Sent items
-            // This hides the "Received" side of a self-payment, showing only the "Sent" side
-            const uniqueReceivedForDisplay = receivedItems.filter(r => !r.txHash || !sentIds.has(r.txHash));
-
-            displayedItems = [...uniqueReceivedForDisplay, ...sentItems];
+            // Standard View: Show EVERYTHING (Sent + Received)
+            // If self-payment, show both -100 (Sent) and +100 (Received) so math balances out.
+            // Duplicates of the SAME item are already handled by the Map() unique filtering above.
+            displayedItems = [...receivedItems, ...sentItems];
             break;
     }
 
