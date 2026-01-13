@@ -26,7 +26,7 @@ export default function FaucetPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [txHash, setTxHash] = useState(null)
     const [errorMsg, setErrorMsg] = useState(null)
-    const [errorMsg, setErrorMsg] = useState(null)
+
     const [showShareModal, setShowShareModal] = useState(false)
     const [stats, setStats] = useState({ claims: 0, totalDistributed: 0, uniqueWallets: 0 })
     const [turnstileToken, setTurnstileToken] = useState(null)
