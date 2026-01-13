@@ -24,32 +24,32 @@ export const faucetHandler = async (req, res) => {
             return res.status(500).json({ error: 'Faucet under maintenance (Config Error).' });
         }
 
-        // 0. Verify Turnstile Token (DISABLED)
-        // const turnstileToken = req.body.turnstileToken;
-        // const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+        // 0. Verify Turnstile Token
+        const turnstileToken = req.body.turnstileToken;
+        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
 
-        // if (!turnstileSecret) {
-        //     console.warn("⚠️ TURNSTILE_SECRET_KEY missing. Skipping captcha check.");
-        // } else if (!turnstileToken) {
-        //     return res.status(400).json({ error: 'Invalid captcha. Reload the page.' });
-        // } else {
-        //     // Verify with Cloudflare
-        //     const formData = new URLSearchParams();
-        //     formData.append('secret', turnstileSecret);
-        //     formData.append('response', turnstileToken);
-        //     formData.append('remoteip', ip);
+        if (!turnstileSecret) {
+            console.warn("⚠️ TURNSTILE_SECRET_KEY missing. Skipping captcha check.");
+        } else if (!turnstileToken) {
+            return res.status(400).json({ error: 'Please complete the security check.' });
+        } else {
+            // Verify with Cloudflare
+            const formData = new URLSearchParams();
+            formData.append('secret', turnstileSecret);
+            formData.append('response', turnstileToken);
+            formData.append('remoteip', ip);
 
-        //     const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-        //         method: 'POST',
-        //         body: formData,
-        //     });
+            const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                method: 'POST',
+                body: formData,
+            });
 
-        //     const outcome = await result.json();
-        //     if (!outcome.success) {
-        //         console.error("Captcha Failed:", outcome);
-        //         return res.status(400).json({ error: 'Captcha verification failed.' });
-        //     }
-        // }
+            const outcome = await result.json();
+            if (!outcome.success) {
+                console.error("Captcha Failed:", outcome);
+                return res.status(400).json({ error: 'Security check failed. Please reload.' });
+            }
+        }
 
         // 1. Check Cooldown in DB
         // We'll use a direct query here since store.js is generic. 
