@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { arcTestnet } from '../config/wagmi'
 
 import confetti from 'canvas-confetti'
+import { Turnstile } from '@marsidev/react-turnstile'
 import WalletModal from '../components/ui/WalletModal'
 import { useConnect } from 'wagmi'
 
@@ -25,8 +26,10 @@ export default function FaucetPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [txHash, setTxHash] = useState(null)
     const [errorMsg, setErrorMsg] = useState(null)
+    const [errorMsg, setErrorMsg] = useState(null)
     const [showShareModal, setShowShareModal] = useState(false)
     const [stats, setStats] = useState({ claims: 0, totalDistributed: 0, uniqueWallets: 0 })
+    const [turnstileToken, setTurnstileToken] = useState(null)
 
     const [timeLeft, setTimeLeft] = useState(null); // in MS
 
@@ -187,6 +190,11 @@ export default function FaucetPage() {
     const handleClaim = async () => {
         if (!isConnected || !address) return;
 
+        if (!turnstileToken) {
+            setErrorMsg("Please complete the security check below.")
+            return;
+        }
+
         setErrorMsg(null);
         setTxHash(null);
 
@@ -205,7 +213,8 @@ export default function FaucetPage() {
             const response = await fetch(FAUCET_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address, turnstileToken })
             });
 
             const data = await response.json();
@@ -300,6 +309,17 @@ export default function FaucetPage() {
                 {/* Claim Card - Clean style (Reverted) */}
                 <div className="relative">
                     <div className="relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 space-y-5">
+
+                        {/* Turnstile Widget */}
+                        <div className="flex justify-center py-2 h-[80px]">
+                            <Turnstile
+                                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                                onSuccess={setTurnstileToken}
+                                onError={() => setErrorMsg("Security check failed. Please reload.")}
+                                onExpire={() => setTurnstileToken(null)}
+                                options={{ theme: 'dark' }}
+                            />
+                        </div>
 
                         {/* Claim Button */}
                         {!isConnected ? (
