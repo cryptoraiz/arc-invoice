@@ -47,7 +47,7 @@ export const config = createConfig({
   chains: [arcTestnet, sonicTestnet, mainnet, arbitrum, polygon, optimism, base],
   connectors: [
     injected(),
-    walletConnect({ projectId, showQrModal: true }),
+    walletConnect({ projectId, showQrModal: false }), // AppKit gerencia o modal
     coinbaseWallet({ appName: 'Arc Invoice' }),
   ],
   transports: {

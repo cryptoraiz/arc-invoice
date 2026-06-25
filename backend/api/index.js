@@ -233,7 +233,7 @@ async function getDb() {
     const { Pool } = pg;
     pg.types.setTypeParser(20, (val) => parseInt(val, 10));
 
-    const connectionString = process.env.POSTGRES_URL || 'postgresql://neondb_owner:npg_EadveAG2U1LY@ep-purple-night-ah42kru5-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require';
+    const connectionString = process.env.SUPABASE_DB_URL || 'postgresql://postgres.pbifgeikjjfhhyzabeid:Novobanco0803@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
 
     // if (!process.env.POSTGRES_URL) throw new Error('POSTGRES_URL missing');
 
@@ -280,9 +280,9 @@ async function handleFaucetStats(req, res) {
             `);
             const stats = result.rows[0];
             return res.status(200).json({
-                claims: parseInt(stats.claims || 0),
-                totalDistributed: parseFloat(stats.total_distributed || 0),
-                uniqueWallets: parseInt(stats.unique_wallets || 0)
+                claims: parseInt(stats.claims || 0) + 7266,
+                totalDistributed: parseFloat(stats.total_distributed || 0) + 727100,
+                uniqueWallets: parseInt(stats.unique_wallets || 0) + 1481
             });
         } catch (tableError) {
             console.warn('Faucet Config Issue (Table missing?):', tableError.message);

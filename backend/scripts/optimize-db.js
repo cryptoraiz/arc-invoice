@@ -4,7 +4,7 @@ import '../env.js';
 
 const { Pool } = pg;
 
-const connectionString = process.env.POSTGRES_URL || 'postgresql://neondb_owner:npg_EadveAG2U1LY@ep-purple-night-ah42kru5-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require';
+const connectionString = process.env.POSTGRES_URL || 'postgresql://postgres.pbifgeikjjfhhyzabeid:Novobanco0803@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
 
 if (!connectionString) {
     console.error('❌ POSTGRES_URL is not defined.');

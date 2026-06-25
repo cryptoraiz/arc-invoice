@@ -213,7 +213,6 @@ export default function FaucetPage() {
             const response = await fetch(FAUCET_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ address, turnstileToken })
             });
 

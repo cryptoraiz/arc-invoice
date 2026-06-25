@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAccount, useSwitchChain, useChainId, useReadContract } from 'wagmi'
+import { useAccount, useSwitchChain, useChainId, useReadContract, useConnect } from 'wagmi'
 import { getPaymentLinkById, updatePaymentLink, saveSentPayment } from '../utils/localStorage'
 import { generatePaymentReceipt } from '../utils/generateReceipt'
 import { invoiceAPI } from '../services/invoiceService'
 import QRCode from 'react-qr-code'
 import WalletModal from '../components/ui/WalletModal'
 import { toast } from 'sonner'
-import { useWriteContract, useWaitForTransactionReceipt, useConnect } from 'wagmi'
 import { parseUnits, formatUnits } from 'viem'
 import { ERC20_ABI } from '../utils/abis'
 import { arcTestnet } from '../config/wagmi'
+import { getAppKit, createCircleAdapter } from '../config/circleKit'
+import SelfPayModal from '../components/ui/SelfPayModal'
 
 // Official Arc Testnet Addresses
 const USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
@@ -31,6 +32,7 @@ export default function PayPage() {
     const [timeLeft, setTimeLeft] = useState(null)
     const [isExpired, setIsExpired] = useState(false)
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+    const [showSelfPayModal, setShowSelfPayModal] = useState(false)
 
     // Mouse tracking for spotlight effect
     const handleMouseMove = (e) => {
@@ -44,8 +46,6 @@ export default function PayPage() {
     // Wagmi Hooks
     const chainId = useChainId()
     const { switchChain } = useSwitchChain()
-    const { data: hash, writeContractAsync, error: writeError } = useWriteContract()
-    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
     // Check token balance
     const tokenAddress = paymentData?.currency === 'EURC' ? EURC_ADDRESS : USDC_ADDRESS;
@@ -197,41 +197,8 @@ export default function PayPage() {
         return `${hours}h ${minutes}m ${seconds}s`;
     };
 
-    // Monitor Transaction Success
-    const successHandled = useRef(false)
-
-    useEffect(() => {
-        if (isConfirmed && hash && address && !successHandled.current) {
-            successHandled.current = true
-            handlePaymentSuccess(hash, address)
-        }
-        if (writeError) {
-            setIsPaying(false)
-
-            // Silence user rejection error
-            if (writeError.message?.toLowerCase().includes('user rejected') ||
-                writeError.shortMessage?.toLowerCase().includes('user rejected')) {
-                // console.log("Transaction canceled by user")
-                return
-            }
-
-            console.error("Payment Error:", writeError)
-            toast.error("Payment error: " + (writeError.shortMessage || "Transaction failed"))
-        }
-
-        // Safety timeout: reset payment state after 20s if stuck
-        if (isPaying) {
-            const timeout = setTimeout(() => {
-                if (isPaying && !isConfirmed) {
-                    console.warn('Payment timeout after 20s')
-                    setIsPaying(false)
-                    toast.error('Transaction failed. Please check your wallet balance and try again.')
-                }
-            }, 20000) // 20 seconds
-
-            return () => clearTimeout(timeout)
-        }
-    }, [isConfirmed, hash, address, writeError, isPaying])
+    // Monitor Transaction via AppKit result (não mais via wagmi hash)
+    // O handlePaymentSuccess é chamado diretamente no kit.send()
 
     const handlePayment = async () => {
         if (!paymentData) return
@@ -241,7 +208,6 @@ export default function PayPage() {
             return
         }
 
-        // Check if on correct network
         if (chainId !== arcTestnet.id) {
             try {
                 toast.info('Switching to Arc Testnet...')
@@ -254,30 +220,32 @@ export default function PayPage() {
 
         setIsPaying(true)
 
-        // Select correct token address based on currency
-        const tokenAddress = paymentData.currency === 'EURC' ? EURC_ADDRESS : USDC_ADDRESS;
-
         try {
-            await writeContractAsync({
-                address: tokenAddress,
-                abi: ERC20_ABI,
-                functionName: 'transfer',
-                args: [
-                    paymentData.recipientWallet,
-                    parseUnits(paymentData.amount.toString(), 6)
-                ],
+            const kit = getAppKit()
+            // createCircleAdapter é async (documentação oficial)
+            const adapter = await createCircleAdapter()
+            const result = await kit.send({
+                from: { adapter, chain: 'Arc_Testnet' },
+                to: paymentData.recipientWallet,
+                amount: paymentData.amount.toString(),
+                token: paymentData.currency || 'USDC',
             })
+            const confirmedHash = result?.txHash || result?.hash || ''
+            await handlePaymentSuccess(confirmedHash, address)
         } catch (err) {
-            console.error("Write Contract Error:", err)
+            console.error('[AppKit] kit.send() erro:', err)
             setIsPaying(false)
+            const msg = (err.message || '').toLowerCase()
+            const code = String(err.code || err.name || '').toLowerCase()
 
-            const msg = err.message?.toLowerCase() || '';
-            if (msg.includes('insufficient funds') || msg.includes('exceeds balance')) {
-                toast.error("⚠️ Insufficient Balance (Token + Gas)");
-            } else if (msg.includes('rejected')) {
-                toast.info("Transaction canceled");
+            if (msg.includes('rejected') || msg.includes('denied') || msg.includes('cancel') || msg.includes('user rejected')) {
+                toast.info('Transação cancelada')
+            } else if (msg.includes('different address than the sender') || msg.includes('invalid_address') || code.includes('invalid_address')) {
+                setShowSelfPayModal(true)
+            } else if (msg.includes('insufficient') || msg.includes('balance')) {
+                toast.error('⚠️ Saldo insuficiente de USDC')
             } else {
-                toast.error("Error: " + (err.shortMessage || "Transaction failed"));
+                toast.error('Erro no pagamento: ' + (err.message || 'Tente novamente'))
             }
         }
     }
@@ -715,7 +683,7 @@ export default function PayPage() {
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                                     </svg>
-                                                    {isConfirming ? 'Confirming...' : 'Processing...'}
+                                                    Processing...
                                                 </span>
                                             ) : (
                                                 `Pay ${paymentData.amount} ${paymentData.currency}`
@@ -788,6 +756,11 @@ export default function PayPage() {
                     connect({ connector })
                     setIsWalletModalOpen(false)
                 }}
+            />
+            <SelfPayModal
+                isOpen={showSelfPayModal}
+                onClose={() => setShowSelfPayModal(false)}
+                walletAddress={address}
             />
         </section>
     )
